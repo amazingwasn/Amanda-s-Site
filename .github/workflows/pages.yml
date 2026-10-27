@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - run: mkdir public && cp index.html public/index.html && cp -R assets public/assets && touch public/.nojekyll
+      - run: mkdir public && cp *.html public/ && cp -R assets public/assets && touch public/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
