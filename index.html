@@ -10,7 +10,7 @@
 /* Reveal navigation on demand without covering the work while browsing. */
 header{padding:14px 5vw;transition:transform .22s ease;will-change:transform}
 header.nav-hidden{transform:translateY(-105%);pointer-events:none}
-header:focus-within{transform:translateY(0);pointer-events:auto}
+header:has(:focus-visible){transform:translateY(0);pointer-events:auto}
 body:not(.nav-visible) .toolbar{top:0}
 @media(max-width:750px){header{flex-direction:row;align-items:center;gap:12px;padding:12px 5vw}header strong{font-size:12px;letter-spacing:.1em}nav{gap:14px;font-size:11px;flex-wrap:nowrap}}
 @media(prefers-reduced-motion:reduce){header{transition:none}}
@@ -34,7 +34,7 @@ body:not(.nav-visible) .toolbar{top:0}
 // Desktop: reveal at the top edge. Touch: reveal when scrolling back up.
 let navPointerY=Infinity,navLastY=window.scrollY,navTravel=0,navHideTimer;
 const navHasHover=window.matchMedia('(hover: hover)');
-function setNavigationVisible(visible){if(window.scrollY<32||navigation.contains(document.activeElement))visible=true;navigation.classList.toggle('nav-hidden',!visible);document.body.classList.toggle('nav-visible',visible)}
+function setNavigationVisible(visible){if(window.scrollY<32||!!navigation.querySelector(':focus-visible'))visible=true;navigation.classList.toggle('nav-hidden',!visible);document.body.classList.toggle('nav-visible',visible)}
 function scheduleNavigationHide(){clearTimeout(navHideTimer);navHideTimer=setTimeout(()=>{if(navPointerY>navigation.offsetHeight+24)setNavigationVisible(false)},350)}
 document.addEventListener('mousemove',event=>{navPointerY=event.clientY;if(event.clientY<=18){clearTimeout(navHideTimer);setNavigationVisible(true)}else if(event.clientY>navigation.offsetHeight+24)scheduleNavigationHide();else clearTimeout(navHideTimer)},{passive:true});
 document.addEventListener('mouseleave',()=>{navPointerY=Infinity;scheduleNavigationHide()});
