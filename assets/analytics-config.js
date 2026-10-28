@@ -1,0 +1,1 @@
+window.PORTFOLIO_ANALYTICS=Object.freeze({"url":"https://xuzeyjakvfearvnwfcpa.supabase.co","key":"sb_publishable_Dv8zH5AS_-MTawEx8MkMZg_hbTa-3uV","collectorKey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1emV5amFrdmZlYXJ2bndmY3BhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMjA1NTIsImV4cCI6MjEwODY5NjU1Mn0.dEl7vm7f-T1EbdPZ2F4mcB5eAQ7bEYiaiGHqdIQkfEY"});
