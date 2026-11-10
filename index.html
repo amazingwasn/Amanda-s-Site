@@ -22,15 +22,25 @@ footer .privacy-link{font-size:11px;color:var(--muted);margin-left:auto;text-dec
 .project-stills.project-stills-four{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.project-stills-four .still-open{aspect-ratio:2.18;display:grid;place-items:center}.project-stills-four .still-open img{height:100%;object-fit:contain}@media(max-width:750px){.project-stills.project-stills-four{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 
 .component-work{margin:24px 0}
+#component{position:relative;transition:color .3s ease}
+body::after{content:"";position:fixed;inset:0;background:#000;opacity:0;visibility:hidden;pointer-events:none;z-index:2000;transition:opacity .3s ease,visibility .3s}
+body.component-viewing::after{opacity:1;visibility:visible}
+body.component-viewing #component{z-index:2001;color:var(--paper)}
+body.component-viewing #component .eyebrow{color:#b9aea0}
 .component-board{position:relative;aspect-ratio:16/9}
-.component-overview{display:block;width:100%;height:auto}
-.component-fragment{position:absolute;padding:0;border:0;background:transparent;cursor:zoom-in}
+.component-overview{display:block;width:100%;height:auto;visibility:hidden}
+.component-fragment{position:absolute;padding:0;border:0;background:transparent;cursor:zoom-in;transition:opacity .24s ease,transform .32s cubic-bezier(.2,.7,.2,1)}
+.component-fragment-image{position:absolute;inset:0;background-image:url('assets/documentary/component-collage-clear.webp');background-repeat:no-repeat;pointer-events:none}
 .component-fragment:hover{background:transparent;color:inherit}
-.component-fragment:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.component-blackout{position:fixed;inset:0;background:#000;opacity:0;visibility:hidden;pointer-events:none;z-index:2000}
+.component-fragment:focus-visible{outline:2px solid #f3c499;outline-offset:4px;z-index:2;transform:scale(1.045)}
+.component-board:has(.component-fragment:focus-visible) .component-fragment:not(:focus-visible){opacity:.24}
 @media(hover:hover){
- .component-work:has(.component-fragment:hover) .component-blackout{opacity:1;visibility:visible}
- .component-work:has(.component-fragment:hover) .component-board{z-index:2001}
+ .component-board:has(.component-fragment:hover) .component-fragment:not(:hover){opacity:.24}
+ .component-fragment:hover{transform:scale(1.045);z-index:2}
+}
+@media(prefers-reduced-motion:reduce){
+ body::after,#component,.component-fragment{transition:none}
+ .component-fragment:hover,.component-fragment:focus-visible{transform:none}
 }
 .component-dialog{width:min(860px,94vw);max-height:90vh;max-height:90dvh;padding:0;border:1px solid #746759;background:#211d17;color:#f3eadc;overflow:auto;overscroll-behavior:contain}
 .component-dialog::backdrop{background:#15110de8}
@@ -143,14 +153,13 @@ function renderComponent(series) {
  ];
  const portraits = series.images.map(({image,x,y,w,h},i) => {
   const [title,caption] = labels[i];
-  return `<button type="button" class="component-fragment" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"></button>`;
+  return `<button type="button" class="component-fragment" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"><span class="component-fragment-image" aria-hidden="true" style="background-size:${10000/w}% ${10000/h}%;background-position:${100*x/(100-w)}% ${100*y/(100-h)}%"></span></button>`;
  });
  const statement = series.text.split(/\n+/).filter(t=>t.trim()).map(t=>`<p>${esc(t)}</p>`).join('');
  return `<article class="series" id="component" aria-labelledby="component-title">
   <p class="eyebrow">Documentary / Photography series</p>
   <h3 id="component-title">Component</h3>
   <div class="component-work">
-   <div class="component-blackout" aria-hidden="true"></div>
    <div class="component-board" role="group" aria-label="Component collage. Choose a photograph to look closer.">
     <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage-clear.webp" width="1600" height="900" alt="">
     ${portraits.join('')}
@@ -176,9 +185,42 @@ function renderComponent(series) {
   <div class="series-copy component-statement"><p class="eyebrow">Artist statement</p>${statement}</div>
  </article>`;
 }
+let componentAudio;
+function componentTone(unlock=false) {
+ try {
+  if(unlock && !componentAudio) {
+   const Context=window.AudioContext || window.webkitAudioContext;
+   if(Context) componentAudio=new Context();
+  }
+  if(unlock && componentAudio?.state==='suspended') componentAudio.resume().catch(()=>{});
+  if(unlock || componentAudio?.state!=='running') return;
+  const now=componentAudio.currentTime;
+  const tone=componentAudio.createOscillator();
+  const volume=componentAudio.createGain();
+  tone.type='sine';
+  tone.frequency.setValueAtTime(520,now);
+  tone.frequency.exponentialRampToValueAtTime(340,now+.09);
+  volume.gain.setValueAtTime(0,now);
+  volume.gain.linearRampToValueAtTime(.018,now+.012);
+  volume.gain.exponentialRampToValueAtTime(.0001,now+.13);
+  tone.connect(volume);
+  volume.connect(componentAudio.destination);
+  tone.onended=()=>{tone.disconnect();volume.disconnect();};
+  tone.start(now);
+  tone.stop(now+.14);
+ } catch {}
+}
+document.addEventListener('pointerdown',()=>componentTone(true),{once:true,capture:true});
+document.addEventListener('keydown',()=>componentTone(true),{once:true,capture:true});
 function initComponent() {
+ initComponent.observer?.disconnect();
+ document.body.classList.remove('component-viewing');
  const root = document.querySelector('#component');
  if (!root) return;
+ initComponent.observer=new IntersectionObserver(entries=>{
+  document.body.classList.toggle('component-viewing',entries[0].isIntersecting);
+ },{rootMargin:'-20% 0px -20% 0px'});
+ initComponent.observer.observe(root);
  const fragments = [...root.querySelectorAll('[data-component-fragment]')];
  const dialog = root.querySelector('.component-dialog');
  const photo = root.querySelector('.component-closeup');
@@ -204,7 +246,12 @@ function initComponent() {
   dialog.showModal();
  }
 
- fragments.forEach((fragment,i)=>fragment.addEventListener('click',()=>open(i,fragment)));
+ fragments.forEach((fragment,i)=>{
+  fragment.addEventListener('pointerenter',e=>{
+   if(e.pointerType==='mouse') componentTone();
+  });
+  fragment.addEventListener('click',()=>{componentTone(true);open(i,fragment);});
+ });
  dialog.querySelectorAll('[data-component-step]').forEach(button=>{
   button.addEventListener('click',()=>show(index + Number(button.dataset.componentStep)));
  });
