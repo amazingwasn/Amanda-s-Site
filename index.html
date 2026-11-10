@@ -70,6 +70,20 @@ body.component-viewing #component .eyebrow{color:#b9aea0}
  .component-back{padding:6px 10px}
 }
 @media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}}
+
+/* The original collage becomes a flexible body along the scroll path. */
+.component-work{height:220svh;min-height:1100px;position:relative;overflow:clip;overflow-clip-margin:50px}
+.component-pin{position:sticky;top:clamp(80px,calc(50svh - 25.3125vw),40svh)}
+.component-fish{position:relative;width:100%;transform-origin:42% 50%;will-change:transform,opacity}
+.component-swim-part{position:absolute;transform-origin:15% 50%;will-change:transform}
+.component-swim-part .component-fragment{inset:0;width:100%;height:100%}
+.component-swim-part:has(.component-fragment:hover),.component-swim-part:has(.component-fragment:focus-visible){z-index:3}
+@media(max-width:620px){.component-work{height:180svh;min-height:850px}}
+@media(prefers-reduced-motion:reduce){
+ .component-work{height:auto;min-height:0;overflow:visible}
+ .component-pin{position:static}
+ .component-fish,.component-swim-part{will-change:auto}
+}
 </style></head><body>
 <header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a></nav></header>
 <main><div class="hero"><div><div class="eyebrow">A visual journal / Photography · Film · People</div><h1>Collected<br><em>encounters.</em></h1></div><div><p class="intro" id="intro"></p><p class="eyebrow">Look closer. Stay a little longer.</p></div></div>
@@ -153,16 +167,20 @@ function renderComponent(series) {
  ];
  const portraits = series.images.map(({image,x,y,w,h},i) => {
   const [title,caption] = labels[i];
-  return `<button type="button" class="component-fragment" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"><span class="component-fragment-image" aria-hidden="true" style="background-size:${10000/w}% ${10000/h}%;background-position:${100*x/(100-w)}% ${100*y/(100-h)}%"></span></button>`;
+  return `<div class="component-swim-part" data-swim-position="${(x+w/2)/100}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%"><button type="button" class="component-fragment" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"><span class="component-fragment-image" aria-hidden="true" style="background-size:${10000/w}% ${10000/h}%;background-position:${100*x/(100-w)}% ${100*y/(100-h)}%"></span></button></div>`;
  });
  const statement = series.text.split(/\n+/).filter(t=>t.trim()).map(t=>`<p>${esc(t)}</p>`).join('');
  return `<article class="series" id="component" aria-labelledby="component-title">
   <p class="eyebrow">Documentary / Photography series</p>
   <h3 id="component-title">Component</h3>
   <div class="component-work">
-   <div class="component-board" role="group" aria-label="Component collage. Choose a photograph to look closer.">
-    <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage-clear.webp" width="1600" height="900" alt="">
-    ${portraits.join('')}
+   <div class="component-pin">
+    <div class="component-board" role="group" aria-label="Component collage. The photographs swim together as you scroll. Choose a photograph to look closer.">
+     <div class="component-fish">
+      <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage-clear.webp" width="1600" height="900" alt="">
+      ${portraits.join('')}
+     </div>
+    </div>
    </div>
   </div>
   <dialog class="component-dialog" aria-labelledby="component-fragment-title" aria-describedby="component-fragment-caption">
@@ -212,7 +230,78 @@ function componentTone(unlock=false) {
 }
 document.addEventListener('pointerdown',()=>componentTone(true),{once:true,capture:true});
 document.addEventListener('keydown',()=>componentTone(true),{once:true,capture:true});
+function initComponentSwim(root) {
+ const work=root.querySelector('.component-work');
+ const pin=root.querySelector('.component-pin');
+ const fish=root.querySelector('.component-fish');
+ const parts=[...root.querySelectorAll('.component-swim-part')];
+ const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const events=new AbortController();
+ let frame=0,lastTime=0,current=0,target=0,width=0,visible=false;
+ const clamp=n=>Math.max(0,Math.min(1,n));
+ const smooth=n=>{const p=clamp(n);return p*p*(3-2*p);};
+
+ function measure() {
+  const rect=work.getBoundingClientRect();
+  const top=parseFloat(getComputedStyle(pin).top)||0;
+  width=pin.clientWidth;
+  target=clamp((top-rect.top)/Math.max(1,work.offsetHeight-pin.offsetHeight));
+ }
+ function paint(progress) {
+  const wake=smooth(progress/.13);
+  const departure=smooth((progress-.16)/.84);
+  const phase=progress*Math.PI*6;
+  const fade=1-smooth((progress-.82)/.18);
+  const drift=-width*1.18*departure;
+  const lift=Math.sin(progress*Math.PI)*width*.055;
+  const scale=1-.24*departure;
+  fish.style.transform=`translate3d(${drift}px,${-lift}px,0) rotate(${Math.sin(phase)*1.2*wake}deg) scale(${scale})`;
+  fish.style.opacity=fade;
+  fish.inert=fade<.01;
+  parts.forEach(part=>{
+   const position=Number(part.dataset.swimPosition);
+   const wave=phase-position*4.4;
+   const amplitude=width*(.002+.024*position*position)*wake;
+   const bend=Math.sin(wave);
+   part.style.transform=`translate3d(0,${bend*amplitude}px,0) rotate(${Math.cos(wave)*position*5*wake}deg)`;
+  });
+ }
+ function tick(time) {
+  frame=0;
+  const dt=lastTime?Math.min(50,time-lastTime):16;
+  lastTime=time;
+  current+=(target-current)*(1-Math.exp(-dt/85));
+  if(Math.abs(target-current)<.00008) current=target;
+  paint(current);
+  if(current!==target) frame=requestAnimationFrame(tick);
+  else lastTime=0;
+ }
+ function update() {
+  if(motion.matches) return;
+  measure();
+  if(visible&&!frame) frame=requestAnimationFrame(tick);
+ }
+ function reset() {
+  cancelAnimationFrame(frame);frame=0;lastTime=0;
+  if(motion.matches) {
+   fish.style.transform='';fish.style.opacity='';fish.inert=false;
+   parts.forEach(part=>{part.style.transform='';});
+  } else update();
+ }
+ const observer=new IntersectionObserver(entries=>{
+  visible=entries[0].isIntersecting;
+  if(visible) update();
+  else {cancelAnimationFrame(frame);frame=0;lastTime=0;}
+ },{rootMargin:'120px 0px'});
+ observer.observe(work);
+ window.addEventListener('scroll',update,{passive:true,signal:events.signal});
+ window.addEventListener('resize',update,{passive:true,signal:events.signal});
+ motion.addEventListener('change',reset,{signal:events.signal});
+ measure();paint(0);reset();
+ return ()=>{events.abort();observer.disconnect();cancelAnimationFrame(frame);};
+}
 function initComponent() {
+ initComponent.cleanup?.();
  initComponent.observer?.disconnect();
  document.body.classList.remove('component-viewing');
  const root = document.querySelector('#component');
@@ -221,6 +310,7 @@ function initComponent() {
   document.body.classList.toggle('component-viewing',entries[0].isIntersecting);
  },{rootMargin:'-20% 0px -20% 0px'});
  initComponent.observer.observe(root);
+ initComponent.cleanup=initComponentSwim(root);
  const fragments = [...root.querySelectorAll('[data-component-fragment]')];
  const dialog = root.querySelector('.component-dialog');
  const photo = root.querySelector('.component-closeup');
