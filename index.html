@@ -21,26 +21,17 @@ footer .privacy-link{font-size:11px;color:var(--muted);margin-left:auto;text-dec
 .horizon-grid{transform:none!important;transition:none;will-change:auto;background:url('assets/horizon/forest.webp') center/100% 100% no-repeat}.horizon-tree,.horizon-tree:hover,.horizon-tree:focus{background:transparent!important}.horizon-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}.horizon-stage{contain:layout paint}.horizon-experience.is-forest .horizon-grid{animation:horizon-reveal .3s ease-out}@keyframes horizon-reveal{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}@media(prefers-reduced-motion:reduce){.horizon-experience.is-forest .horizon-grid{animation:none}}
 .project-stills.project-stills-four{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.project-stills-four .still-open{aspect-ratio:2.18;display:grid;place-items:center}.project-stills-four .still-open img{height:100%;object-fit:contain}@media(max-width:750px){.project-stills.project-stills-four{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 
-.component-work{--component-paper:#ede6d8;--component-dim:#b9aea0;--component-bright:#f3c499;background:#191713;color:var(--component-paper);padding:clamp(12px,2.6vw,34px)}
-.component-bar{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:clamp(12px,2vw,24px)}
-.component-bar p,.component-hint{margin:0}
-.component-work .eyebrow,.component-hint{color:var(--component-dim)}
-.component-heading{font:clamp(19px,3.4vw,42px)/1.12 Georgia,serif}
-.component-start{flex:none;border-color:#6d6153;color:var(--component-paper);font-size:12px;min-height:44px}
-.component-start span{margin-left:.35em;color:var(--component-bright)}
-.component-start:hover{background:#30271e;color:var(--component-paper)}
-.component-board{position:relative;aspect-ratio:16/9;overflow:hidden}
+.component-work{margin:24px 0}
+.component-board{position:relative;aspect-ratio:16/9}
 .component-overview{display:block;width:100%;height:auto}
 .component-fragment{position:absolute;padding:0;border:0;background:transparent;cursor:zoom-in}
-.component-fragment:hover,.component-fragment:focus-visible{background:transparent;color:inherit;outline:2px solid #f3c499;outline-offset:-2px;z-index:1}
-.component-fragment span{position:absolute;bottom:0;left:0;padding:2px 6px;color:#f9ead7;background:#191713e8;font:11px/1.45 monospace;opacity:0;transition:opacity .18s ease}
-.component-fragment.is-center span,.component-fragment:hover span,.component-fragment:focus-visible span{opacity:1}
-.component-board:has(.component-fragment:focus-visible) .component-fragment:focus-visible{box-shadow:0 0 0 100vmax #191713a8}
-@media(hover:hover){.component-board:not(:has(.component-fragment:focus-visible)) .component-fragment:hover{box-shadow:0 0 0 100vmax #191713a8}}
-.component-fragment.is-seen span{opacity:1;background:#f3c499;color:#211d17}
-.component-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding-top:12px}
-.component-hint,.component-progress{font-size:12px}
-.component-progress{color:var(--component-bright)}
+.component-fragment:hover{background:transparent;color:inherit}
+.component-fragment:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.component-blackout{position:fixed;inset:0;background:#000;opacity:0;visibility:hidden;pointer-events:none;z-index:2000}
+@media(hover:hover){
+ .component-work:has(.component-fragment:hover) .component-blackout{opacity:1;visibility:visible}
+ .component-work:has(.component-fragment:hover) .component-board{z-index:2001}
+}
 .component-dialog{width:min(860px,94vw);max-height:90vh;max-height:90dvh;padding:0;border:1px solid #746759;background:#211d17;color:#f3eadc;overflow:auto;overscroll-behavior:contain}
 .component-dialog::backdrop{background:#15110de8}
 .component-dialog[open]{animation:component-reveal .2s ease-out}
@@ -54,7 +45,7 @@ footer .privacy-link{font-size:11px;color:var(--muted);margin-left:auto;text-dec
 #component-fragment-caption{margin:12px 0 0;color:#e1d4c4}
 .component-dialog button{border-color:#82715e;color:#f3eadc;min-height:44px}
 .component-dialog button:hover{background:#3c3227;color:#f3eadc}
-.component-dialog button:focus-visible,.component-start:focus-visible{outline:2px solid #f3c499;outline-offset:3px}
+.component-dialog button:focus-visible{outline:2px solid #f3c499;outline-offset:3px}
 .component-back{font-size:12px}
 .component-controls{display:flex;gap:8px}
 .component-controls button{min-width:48px}
@@ -66,9 +57,9 @@ footer .privacy-link{font-size:11px;color:var(--muted);margin-left:auto;text-dec
  .component-description{grid-column:1/-1;grid-row:2}
  .component-controls{grid-row:1;grid-column:2}
  .component-controls button{min-width:44px;padding:6px}
- .component-start,.component-back{padding:6px 10px}
+ .component-back{padding:6px 10px}
 }
-@media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}.component-fragment span{transition:none}}
+@media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}}
 </style></head><body>
 <header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a></nav></header>
 <main><div class="hero"><div><div class="eyebrow">A visual journal / Photography · Film · People</div><h1>Collected<br><em>encounters.</em></h1></div><div><p class="intro" id="intro"></p><p class="eyebrow">Look closer. Stay a little longer.</p></div></div>
@@ -152,23 +143,18 @@ function renderComponent(series) {
  ];
  const portraits = series.images.map(({image,x,y,w,h},i) => {
   const [title,caption] = labels[i];
-  const number = String(i+1).padStart(2,'0');
-  return `<button type="button" class="component-fragment${i===4?' is-center':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"><span aria-hidden="true">${number}</span></button>`;
+  return `<button type="button" class="component-fragment" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"></button>`;
  });
  const statement = series.text.split(/\n+/).filter(t=>t.trim()).map(t=>`<p>${esc(t)}</p>`).join('');
  return `<article class="series" id="component" aria-labelledby="component-title">
   <p class="eyebrow">Documentary / Photography series</p>
   <h3 id="component-title">Component</h3>
   <div class="component-work">
-   <div class="component-bar">
-    <div><p class="eyebrow">01–11 / The fragments</p><p class="component-heading">A portrait in pieces</p></div>
-    <button type="button" class="component-start">Start with her <span aria-hidden="true">↗</span></button>
-   </div>
+   <div class="component-blackout" aria-hidden="true"></div>
    <div class="component-board" role="group" aria-label="Component collage. Choose a photograph to look closer.">
-    <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage.webp" width="1600" height="900" alt="">
+    <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage-clear.webp" width="1600" height="900" alt="">
     ${portraits.join('')}
    </div>
-   <div class="component-footer"><p class="component-hint">Choose any photograph to look closer.</p><output class="component-progress">0 of ${portraits.length} explored</output></div>
   </div>
   <dialog class="component-dialog" aria-labelledby="component-fragment-title" aria-describedby="component-fragment-caption">
    <div class="component-detail">
@@ -197,8 +183,6 @@ function initComponent() {
  const dialog = root.querySelector('.component-dialog');
  const photo = root.querySelector('.component-closeup');
  const count = root.querySelector('.component-count');
- const progress = root.querySelector('.component-progress');
- const seen = new Set();
  const title = root.querySelector('#component-fragment-title');
  const caption = root.querySelector('#component-fragment-caption');
  let index = 4;
@@ -207,9 +191,6 @@ function initComponent() {
  function show(next) {
   index = (next + fragments.length) % fragments.length;
   const fragment = fragments[index];
-  seen.add(index);
-  fragment.classList.add('is-seen');
-  progress.textContent = seen.size + ' of ' + fragments.length + ' explored';
   const {image,title:label,caption:description} = fragment.dataset;
   photo.src = image;
   photo.alt = label;
@@ -223,7 +204,6 @@ function initComponent() {
   dialog.showModal();
  }
 
- root.querySelector('.component-start').addEventListener('click',e=>open(4,e.currentTarget));
  fragments.forEach((fragment,i)=>fragment.addEventListener('click',()=>open(i,fragment)));
  dialog.querySelectorAll('[data-component-step]').forEach(button=>{
   button.addEventListener('click',()=>show(index + Number(button.dataset.componentStep)));
