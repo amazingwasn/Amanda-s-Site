@@ -249,9 +249,9 @@ function initComponentSwim(root) {
  }
  function paint(progress) {
   const wake=smooth(progress/.13);
-  const departure=smooth((progress-.16)/.84);
+  const departure=smooth((progress-.36)/.64);
   const phase=progress*Math.PI*6;
-  const fade=1-smooth((progress-.82)/.18);
+  const fade=1-smooth((progress-.76)/.24);
   const drift=-width*1.18*departure;
   const lift=Math.sin(progress*Math.PI)*width*.055;
   const scale=1-.24*departure;
