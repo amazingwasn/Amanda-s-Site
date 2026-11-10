@@ -20,6 +20,55 @@ footer .privacy-link{font-size:11px;color:var(--muted);margin-left:auto;text-dec
 
 .horizon-grid{transform:none!important;transition:none;will-change:auto;background:url('assets/horizon/forest.webp') center/100% 100% no-repeat}.horizon-tree,.horizon-tree:hover,.horizon-tree:focus{background:transparent!important}.horizon-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}.horizon-stage{contain:layout paint}.horizon-experience.is-forest .horizon-grid{animation:horizon-reveal .3s ease-out}@keyframes horizon-reveal{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}@media(prefers-reduced-motion:reduce){.horizon-experience.is-forest .horizon-grid{animation:none}}
 .project-stills.project-stills-four{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.project-stills-four .still-open{aspect-ratio:2.18;display:grid;place-items:center}.project-stills-four .still-open img{height:100%;object-fit:contain}@media(max-width:750px){.project-stills.project-stills-four{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+
+.component-work{--component-paper:#ede6d8;--component-dim:#b9aea0;--component-bright:#f3c499;background:#191713;color:var(--component-paper);padding:clamp(12px,2.6vw,34px)}
+.component-bar{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:clamp(12px,2vw,24px)}
+.component-bar p,.component-hint{margin:0}
+.component-work .eyebrow,.component-hint{color:var(--component-dim)}
+.component-heading{font:clamp(19px,3.4vw,42px)/1.12 Georgia,serif}
+.component-start{flex:none;border-color:#6d6153;color:var(--component-paper);font-size:12px;min-height:44px}
+.component-start span{margin-left:.35em;color:var(--component-bright)}
+.component-start:hover{background:#30271e;color:var(--component-paper)}
+.component-board{position:relative;aspect-ratio:16/9;overflow:hidden}
+.component-overview{display:block;width:100%;height:auto}
+.component-fragment{position:absolute;padding:0;border:0;background:transparent;cursor:zoom-in}
+.component-fragment:hover,.component-fragment:focus-visible{background:transparent;color:inherit;outline:2px solid #f3c499;outline-offset:-2px;z-index:1}
+.component-fragment span{position:absolute;bottom:0;left:0;padding:2px 6px;color:#f9ead7;background:#191713e8;font:11px/1.45 monospace;opacity:0;transition:opacity .18s ease}
+.component-fragment.is-center span,.component-fragment:hover span,.component-fragment:focus-visible span{opacity:1}
+.component-board:has(.component-fragment:focus-visible) .component-fragment:focus-visible{box-shadow:0 0 0 100vmax #191713a8}
+@media(hover:hover){.component-board:not(:has(.component-fragment:focus-visible)) .component-fragment:hover{box-shadow:0 0 0 100vmax #191713a8}}
+.component-fragment.is-seen span{opacity:1;background:#f3c499;color:#211d17}
+.component-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding-top:12px}
+.component-hint,.component-progress{font-size:12px}
+.component-progress{color:var(--component-bright)}
+.component-dialog{width:min(860px,94vw);max-height:90vh;max-height:90dvh;padding:0;border:1px solid #746759;background:#211d17;color:#f3eadc;overflow:auto;overscroll-behavior:contain}
+.component-dialog::backdrop{background:#15110de8}
+.component-dialog[open]{animation:component-reveal .2s ease-out}
+@keyframes component-reveal{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.component-detail{display:grid;grid-template-columns:1.15fr 1fr}
+.component-image-frame{min-width:0;background:#191713;display:grid;place-items:center;padding:clamp(10px,2vw,24px)}
+.component-closeup{display:block;width:100%;height:min(65vh,590px);height:min(65dvh,590px);object-fit:contain}
+.component-detail-copy{display:flex;flex-direction:column;justify-content:space-between;align-items:start;gap:22px;padding:clamp(18px,3vw,38px)}
+.component-count{color:#ceb9a2;margin:0 0 7px}
+.component-description h4{margin:0;font:clamp(27px,4vw,48px)/1.02 Georgia,serif}
+#component-fragment-caption{margin:12px 0 0;color:#e1d4c4}
+.component-dialog button{border-color:#82715e;color:#f3eadc;min-height:44px}
+.component-dialog button:hover{background:#3c3227;color:#f3eadc}
+.component-dialog button:focus-visible,.component-start:focus-visible{outline:2px solid #f3c499;outline-offset:3px}
+.component-back{font-size:12px}
+.component-controls{display:flex;gap:8px}
+.component-controls button{min-width:48px}
+@media(max-width:620px){
+ .component-detail{grid-template-columns:1fr}
+ .component-closeup{height:40vh;height:40dvh}
+ .component-detail-copy{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+ .component-detail-copy form{grid-row:1;grid-column:1}
+ .component-description{grid-column:1/-1;grid-row:2}
+ .component-controls{grid-row:1;grid-column:2}
+ .component-controls button{min-width:44px;padding:6px}
+ .component-start,.component-back{padding:6px 10px}
+}
+@media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}.component-fragment span{transition:none}}
 </style></head><body>
 <header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a></nav></header>
 <main><div class="hero"><div><div class="eyebrow">A visual journal / Photography · Film · People</div><h1>Collected<br><em>encounters.</em></h1></div><div><p class="intro" id="intro"></p><p class="eyebrow">Look closer. Stay a little longer.</p></div></div>
@@ -49,7 +98,7 @@ navigation.addEventListener('click',event=>{if(event.target.closest('a')){navPoi
 window.addEventListener('scroll',()=>{const y=window.scrollY,delta=y-navLastY;navLastY=y;if(y<32){navTravel=0;setNavigationVisible(true);return}if(navHasHover.matches){if(navPointerY>navigation.offsetHeight+24)setNavigationVisible(false)}else{if(Math.sign(delta)!==Math.sign(navTravel))navTravel=0;navTravel+=delta;if(navTravel>14)setNavigationVisible(false);else if(navTravel<-14)setNavigationVisible(true)}},{passive:true});
 setNavigationVisible(window.scrollY<32);
 
-const $=s=>document.querySelector(s);const state=JSON.parse($('#site-data').textContent),editing=false;let filter='all',map,markers;const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const safeImage=s=>/^data:image\/(png|jpeg|webp|gif);base64,/i.test(s)||/^https?:\/\//i.test(s)||/^assets\/[a-zA-Z0-9._/-]+$/.test(s)?s:'';function clean(html){const d=document.createElement('div');d.innerHTML=html;d.querySelectorAll('script,style,iframe,object,embed,svg,math').forEach(n=>n.remove());d.querySelectorAll('*').forEach(n=>{if(!['P','BR','B','STRONG','I','EM','U','BLOCKQUOTE','UL','OL','LI','DIV'].includes(n.tagName))n.replaceWith(...n.childNodes);else [...n.attributes].forEach(a=>n.removeAttribute(a.name))});return d.innerHTML}function controls(){return ''}function empty(t){return `<div class="empty">${t}</div>`}function yt(v){try{const u=new URL(v);if(['youtu.be','www.youtu.be'].includes(u.hostname))return /^[\w-]{11}$/.test(u.pathname.slice(1))?u.pathname.slice(1):null;if(!['youtube.com','www.youtube.com','m.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname))return null;const id=u.searchParams.get('v')||u.pathname.split('/').filter(Boolean)[1];return /^[\w-]{11}$/.test(id)?id:null}catch{return null}}function render(){ $('#intro').textContent=state.intro;$('#heroCaption').textContent=state.coverCaption;$('#heroImage').innerHTML=state.cover?`<img src="${esc(safeImage(state.cover))}" alt="${esc(state.coverCaption)}">`:'<div class="placeholder">A place for your perspective.<small style="font:12px Arial;margin-top:18px">Add your first cover photograph</small></div>';const intuition=state.intuition;$('#intuition-series').innerHTML=intuition&&(filter==='all'||filter==='everyday')?'<article class="series"><p class="eyebrow">Intuition / Photography</p><h3>'+esc(intuition.title)+'</h3><div class="intuition-pair"><img loading="lazy" src="assets/babel-refreshed-1.svg" alt="Babel by the Ocean — people in the sea" data-series-image><img loading="lazy" src="assets/babel-refreshed-2.svg" alt="Babel by the Ocean — sand tower" data-series-image></div><div class="series-copy">'+intuition.text.split(/\n\n/).map(t=>'<p>'+esc(t)+'</p>').join('')+'</div></article>':'';const theatre=state.theatre;$('#theatre-series').innerHTML=theatre&&(filter==='all'||filter==='theatre')?'<div class="series">'+theatre.images.map(p=>'<figure style="margin:0 0 36px"><h3>'+esc(p.title)+'</h3><img class="series-single" loading="lazy" src="'+esc(safeImage(p.image))+'" alt="'+esc(p.title)+'" data-series-image></figure>').join('')+'<h3>'+esc(theatre.title)+'</h3><div class="series-copy">'+theatre.text.split(/\n\n/).map(t=>'<p>'+esc(t)+'</p>').join('')+'</div></div>':'';const series=state.series||[];$('#documentary-series').innerHTML=(filter==='all'||filter==='documentary')?series.map(s=>{if(s.title==='Horizon')return renderHorizon(s);const pages=[...new Set(s.images.map(i=>i.page))];return '<article class="series"><p class="eyebrow">Documentary / Photography series</p><h3>'+esc(s.title)+'</h3>'+pages.map(page=>{const pics=s.images.filter(i=>i.page===page);if(pics.length===1)return '<img class="series-single" loading="lazy" src="'+esc(pics[0].image)+'" alt="'+esc(s.title)+'" data-series-image>';return '<div class="series-page" style="aspect-ratio:16/9">'+pics.map(i=>'<img loading="lazy" src="'+esc(i.image)+'" alt="'+esc(s.title)+'" data-series-image style="left:'+i.x+'%;top:'+i.y+'%;width:'+i.w+'%;height:'+i.h+'%">').join('')+'</div>'}).join('')+'<div class="series-copy">'+s.text.split(/\n\n/).map(t=>'<p>'+esc(t)+'</p>').join('')+'</div></article>'}).join(''):'';$('#documentary-series-after').replaceChildren(...Array.from($('#documentary-series').children).slice(2));initHorizon();const photos=state.photos.filter(p=>filter==='all'||p.category===filter);$('#gallery').innerHTML=photos.length?photos.map(p=>`<figure class="photo"><img loading="lazy" src="${esc(safeImage(p.image))}" alt="${esc(p.title)}" data-read="photo" data-id="${esc(p.id)}"><figcaption>${esc(p.title)}<br><span class="note">${esc(p.location)} · ${esc(p.date)}</span></figcaption>${controls('photo',p.id)}</figure>`).join(''):(((series.length&&(filter==='all'||filter==='documentary'))||(theatre&&(filter==='all'||filter==='theatre'))||(intuition&&(filter==='all'||filter==='everyday')))?'':empty('Photographs will live here.'));$('#films').innerHTML=state.films.length?state.films.map(f=>`<article class="film"><a class="film-card" href="#film/${encodeURIComponent(f.id)}" aria-label="Open ${esc(f.title)}">${(f.cover||(f.stills||[]).length)?`<img class="film-cover" src="${esc(safeImage(f.cover||f.stills[0].image))}" alt="${esc(f.title)}">`:`<div class="video-placeholder"><span class="eyebrow">Film project</span><p>${esc(f.title)}</p></div>`}<div class="film-card-copy"><h3>${esc(f.title)}</h3><p class="note">${[f.roles,f.dates,f.location].filter(Boolean).map(esc).join(' · ')}</p><span class="eyebrow">View project ↗</span></div></a></article>`).join(''):empty('Your film projects.');$('#stories').innerHTML=state.stories.length?state.stories.map(s=>`<div class="story"><div data-read="story" data-id="${esc(s.id)}" tabindex="0" role="button">${s.image?`<img loading="lazy" src="${esc(safeImage(s.image))}" alt="${esc(s.title)}">`:''}<span class="eyebrow">${esc(storyDate(s.date))} / ${esc(s.location)}</span><h3>${esc(s.title)}</h3><p>Read story ↗</p></div>${controls('story',s.id)}</div>`).join(''):empty('Every pin can hold a person and a story.');drawMap();routeFilm()}
+const $=s=>document.querySelector(s);const state=JSON.parse($('#site-data').textContent),editing=false;let filter='all',map,markers;const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const safeImage=s=>/^data:image\/(png|jpeg|webp|gif);base64,/i.test(s)||/^https?:\/\//i.test(s)||/^assets\/[a-zA-Z0-9._/-]+$/.test(s)?s:'';function clean(html){const d=document.createElement('div');d.innerHTML=html;d.querySelectorAll('script,style,iframe,object,embed,svg,math').forEach(n=>n.remove());d.querySelectorAll('*').forEach(n=>{if(!['P','BR','B','STRONG','I','EM','U','BLOCKQUOTE','UL','OL','LI','DIV'].includes(n.tagName))n.replaceWith(...n.childNodes);else [...n.attributes].forEach(a=>n.removeAttribute(a.name))});return d.innerHTML}function controls(){return ''}function empty(t){return `<div class="empty">${t}</div>`}function yt(v){try{const u=new URL(v);if(['youtu.be','www.youtu.be'].includes(u.hostname))return /^[\w-]{11}$/.test(u.pathname.slice(1))?u.pathname.slice(1):null;if(!['youtube.com','www.youtube.com','m.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname))return null;const id=u.searchParams.get('v')||u.pathname.split('/').filter(Boolean)[1];return /^[\w-]{11}$/.test(id)?id:null}catch{return null}}function render(){ $('#intro').textContent=state.intro;$('#heroCaption').textContent=state.coverCaption;$('#heroImage').innerHTML=state.cover?`<img src="${esc(safeImage(state.cover))}" alt="${esc(state.coverCaption)}">`:'<div class="placeholder">A place for your perspective.<small style="font:12px Arial;margin-top:18px">Add your first cover photograph</small></div>';const intuition=state.intuition;$('#intuition-series').innerHTML=intuition&&(filter==='all'||filter==='everyday')?'<article class="series"><p class="eyebrow">Intuition / Photography</p><h3>'+esc(intuition.title)+'</h3><div class="intuition-pair"><img loading="lazy" src="assets/babel-refreshed-1.svg" alt="Babel by the Ocean — people in the sea" data-series-image><img loading="lazy" src="assets/babel-refreshed-2.svg" alt="Babel by the Ocean — sand tower" data-series-image></div><div class="series-copy">'+intuition.text.split(/\n\n/).map(t=>'<p>'+esc(t)+'</p>').join('')+'</div></article>':'';const theatre=state.theatre;$('#theatre-series').innerHTML=theatre&&(filter==='all'||filter==='theatre')?'<div class="series">'+theatre.images.map(p=>'<figure style="margin:0 0 36px"><h3>'+esc(p.title)+'</h3><img class="series-single" loading="lazy" src="'+esc(safeImage(p.image))+'" alt="'+esc(p.title)+'" data-series-image></figure>').join('')+'<h3>'+esc(theatre.title)+'</h3><div class="series-copy">'+theatre.text.split(/\n\n/).map(t=>'<p>'+esc(t)+'</p>').join('')+'</div></div>':'';const series=state.series||[];$('#documentary-series').innerHTML=(filter==='all'||filter==='documentary')?series.map(s=>{if(s.title==='Horizon')return renderHorizon(s);if(s.title==='Component')return renderComponent(s);const pages=[...new Set(s.images.map(i=>i.page))];return '<article class="series"><p class="eyebrow">Documentary / Photography series</p><h3>'+esc(s.title)+'</h3>'+pages.map(page=>{const pics=s.images.filter(i=>i.page===page);if(pics.length===1)return '<img class="series-single" loading="lazy" src="'+esc(pics[0].image)+'" alt="'+esc(s.title)+'" data-series-image>';return '<div class="series-page" style="aspect-ratio:16/9">'+pics.map(i=>'<img loading="lazy" src="'+esc(i.image)+'" alt="'+esc(s.title)+'" data-series-image style="left:'+i.x+'%;top:'+i.y+'%;width:'+i.w+'%;height:'+i.h+'%">').join('')+'</div>'}).join('')+'<div class="series-copy">'+s.text.split(/\n\n/).map(t=>'<p>'+esc(t)+'</p>').join('')+'</div></article>'}).join(''):'';$('#documentary-series-after').replaceChildren(...Array.from($('#documentary-series').children).slice(2));initHorizon();initComponent();const photos=state.photos.filter(p=>filter==='all'||p.category===filter);$('#gallery').innerHTML=photos.length?photos.map(p=>`<figure class="photo"><img loading="lazy" src="${esc(safeImage(p.image))}" alt="${esc(p.title)}" data-read="photo" data-id="${esc(p.id)}"><figcaption>${esc(p.title)}<br><span class="note">${esc(p.location)} · ${esc(p.date)}</span></figcaption>${controls('photo',p.id)}</figure>`).join(''):(((series.length&&(filter==='all'||filter==='documentary'))||(theatre&&(filter==='all'||filter==='theatre'))||(intuition&&(filter==='all'||filter==='everyday')))?'':empty('Photographs will live here.'));$('#films').innerHTML=state.films.length?state.films.map(f=>`<article class="film"><a class="film-card" href="#film/${encodeURIComponent(f.id)}" aria-label="Open ${esc(f.title)}">${(f.cover||(f.stills||[]).length)?`<img class="film-cover" src="${esc(safeImage(f.cover||f.stills[0].image))}" alt="${esc(f.title)}">`:`<div class="video-placeholder"><span class="eyebrow">Film project</span><p>${esc(f.title)}</p></div>`}<div class="film-card-copy"><h3>${esc(f.title)}</h3><p class="note">${[f.roles,f.dates,f.location].filter(Boolean).map(esc).join(' · ')}</p><span class="eyebrow">View project ↗</span></div></a></article>`).join(''):empty('Your film projects.');$('#stories').innerHTML=state.stories.length?state.stories.map(s=>`<div class="story"><div data-read="story" data-id="${esc(s.id)}" tabindex="0" role="button">${s.image?`<img loading="lazy" src="${esc(safeImage(s.image))}" alt="${esc(s.title)}">`:''}<span class="eyebrow">${esc(storyDate(s.date))} / ${esc(s.location)}</span><h3>${esc(s.title)}</h3><p>Read story ↗</p></div>${controls('story',s.id)}</div>`).join(''):empty('Every pin can hold a person and a story.');drawMap();routeFilm()}
 
 function routeFilm(){let id='';try{id=decodeURIComponent(location.hash.startsWith('#film/')?location.hash.slice(6):'')}catch{}const f=state.films.find(f=>f.id===id),detail=$('#film-detail');document.body.classList.toggle('project-open',!!f);detail.hidden=!f;if(!f){detail.innerHTML='';document.title='Han Wang — Collected Encounters';return}document.title=f.title+' — Han Wang';detail.innerHTML=`<a class="back-link" href="#film">← All film projects</a><p class="eyebrow">Film project</p><h1>${esc(f.title)}</h1><p>${[f.roles,f.dates,f.location].filter(Boolean).map(esc).join(' · ')}</p>${yt(f.url)?`<iframe src="https://www.youtube-nocookie.com/embed/${yt(f.url)}" title="${esc(f.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`:f.showVideoPlaceholder===false?'':`<div class="video-placeholder"><p>YouTube video coming soon</p><span class="note">A space reserved for the film.</span></div>`}${f.description?`<p class="project-description">${esc(f.description)}</p>`:''}<div class="project-tools">${controls('film',f.id)}${editing?`<button data-add-stills="${esc(f.id)}">+ Add film stills</button>`:''}</div>${f.stills?.length?`<h2>Selected stills</h2><div class="project-stills${f.stillColumns===4?' project-stills-four':''}">${f.stills.map((p,i)=>`<figure><button class="still-open" data-view-still="${esc(f.id)}" data-index="${i}" aria-label="Enlarge still ${i+1}"><img loading="lazy" decoding="async" src="${esc(safeImage(p.image))}" ${p.width&&p.height?`width="${Number(p.width)}" height="${Number(p.height)}"`:''} alt="${esc(f.title+' — still '+(i+1))}"></button><figcaption class="note">${esc(p.title||'Film still')}</figcaption>${editing?`<button data-remove-still="${esc(f.id)}" data-index="${i}">Remove still</button>`:''}</figure>`).join('')}</div>`:''}`}
 // Capture the portfolio's position before the film route hides its content.
@@ -87,6 +136,106 @@ window.addEventListener('hashchange', () => {
 
 function storyDate(date){if(/^[0-9]{4}-[0-9]{2}$/.test(date))return new Date(date+'-01T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long'});return date}
 
+function renderComponent(series) {
+ const labels = [
+  ['Kitchen counter', 'Containers and jars gather on the counter, part of the everyday work of keeping a home.'],
+  ['By the washing machine', 'I placed laundry and cooking beneath her in the collage, where the repetitive work of the household holds the portrait together.'],
+  ['Books on the shelf', 'The books share a room with the pages she copied by hand. I kept both in the portrait.'],
+  ['Paper offerings', 'She burns these paper offerings as part of her Buddhist practice. Here they are still folded.'],
+  ['My grandmother', 'She is holding food for me. I put this photograph at the center, and arranged the objects around her according to how I remember her.'],
+  ['At the sink', 'A basin, a cloth, and a bottle sit by the faucet. This is one of the ordinary corners I photographed before she moved.'],
+  ['Her wig', 'I placed her wig to her left. It belongs to the part of the portrait about how she presents herself.'],
+  ['The gate', 'The gate opens the portrait out to the space beyond her rooms, at the edge of the collage.'],
+  ['Copied scriptures', 'She cannot read the words she copies. The pages still hold the time and attention it took to write them, again and again.'],
+  ['Beside the wooden frame', 'A small container at the edge of the frame is one of the details I kept from her home.'],
+  ['Her knitting', 'I placed her hand-knitted pieces to her right, among the things she made herself.']
+ ];
+ const portraits = series.images.map(({image,x,y,w,h},i) => {
+  const [title,caption] = labels[i];
+  const number = String(i+1).padStart(2,'0');
+  return `<button type="button" class="component-fragment${i===4?' is-center':''}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"><span aria-hidden="true">${number}</span></button>`;
+ });
+ const statement = series.text.split(/\n+/).filter(t=>t.trim()).map(t=>`<p>${esc(t)}</p>`).join('');
+ return `<article class="series" id="component" aria-labelledby="component-title">
+  <p class="eyebrow">Documentary / Photography series</p>
+  <h3 id="component-title">Component</h3>
+  <div class="component-work">
+   <div class="component-bar">
+    <div><p class="eyebrow">01–11 / The fragments</p><p class="component-heading">A portrait in pieces</p></div>
+    <button type="button" class="component-start">Start with her <span aria-hidden="true">↗</span></button>
+   </div>
+   <div class="component-board" role="group" aria-label="Component collage. Choose a photograph to look closer.">
+    <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage.webp" width="1600" height="900" alt="">
+    ${portraits.join('')}
+   </div>
+   <div class="component-footer"><p class="component-hint">Choose any photograph to look closer.</p><output class="component-progress">0 of ${portraits.length} explored</output></div>
+  </div>
+  <dialog class="component-dialog" aria-labelledby="component-fragment-title" aria-describedby="component-fragment-caption">
+   <div class="component-detail">
+    <div class="component-image-frame"><img class="component-closeup" width="1333" height="2000" alt=""></div>
+    <div class="component-detail-copy">
+     <form method="dialog"><button type="submit" class="component-back" autofocus>← Back to collage</button></form>
+     <div class="component-description" aria-live="polite" aria-atomic="true">
+      <p class="eyebrow component-count"></p>
+      <h4 id="component-fragment-title"></h4>
+      <p id="component-fragment-caption"></p>
+     </div>
+     <div class="component-controls" role="group" aria-label="Browse fragments">
+      <button type="button" data-component-step="-1" aria-label="Previous fragment">←</button>
+      <button type="button" data-component-step="1" aria-label="Next fragment">→</button>
+     </div>
+    </div>
+   </div>
+  </dialog>
+  <div class="series-copy component-statement"><p class="eyebrow">Artist statement</p>${statement}</div>
+ </article>`;
+}
+function initComponent() {
+ const root = document.querySelector('#component');
+ if (!root) return;
+ const fragments = [...root.querySelectorAll('[data-component-fragment]')];
+ const dialog = root.querySelector('.component-dialog');
+ const photo = root.querySelector('.component-closeup');
+ const count = root.querySelector('.component-count');
+ const progress = root.querySelector('.component-progress');
+ const seen = new Set();
+ const title = root.querySelector('#component-fragment-title');
+ const caption = root.querySelector('#component-fragment-caption');
+ let index = 4;
+ let opener;
+
+ function show(next) {
+  index = (next + fragments.length) % fragments.length;
+  const fragment = fragments[index];
+  seen.add(index);
+  fragment.classList.add('is-seen');
+  progress.textContent = seen.size + ' of ' + fragments.length + ' explored';
+  const {image,title:label,caption:description} = fragment.dataset;
+  photo.src = image;
+  photo.alt = label;
+  count.textContent = 'Fragment ' + String(index+1).padStart(2,'0') + ' / ' + fragments.length;
+  title.textContent = label;
+  caption.textContent = description;
+ }
+ function open(next,button) {
+  opener = button;
+  show(next);
+  dialog.showModal();
+ }
+
+ root.querySelector('.component-start').addEventListener('click',e=>open(4,e.currentTarget));
+ fragments.forEach((fragment,i)=>fragment.addEventListener('click',()=>open(i,fragment)));
+ dialog.querySelectorAll('[data-component-step]').forEach(button=>{
+  button.addEventListener('click',()=>show(index + Number(button.dataset.componentStep)));
+ });
+ dialog.addEventListener('keydown',e=>{
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  show(index + (e.key === 'ArrowLeft' ? -1 : 1));
+ });
+ dialog.addEventListener('click',e=>{ if (e.target === dialog) dialog.close(); });
+ dialog.addEventListener('close',()=>opener?.focus({preventScroll:true}));
+}
 function renderHorizon(s){
  const image=s.images.find(p=>p.page===2)?.image||s.images[0].image;
  const paragraphs=s.text.split(/\n+/).filter(t=>t.trim());
