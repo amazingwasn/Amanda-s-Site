@@ -291,7 +291,10 @@ function initComponentSwim(root) {
  const observer=new IntersectionObserver(entries=>{
   visible=entries[0].isIntersecting;
   if(visible) update();
-  else {cancelAnimationFrame(frame);frame=0;lastTime=0;}
+  else {
+   cancelAnimationFrame(frame);frame=0;lastTime=0;
+   if(!motion.matches) {measure();current=target;paint(current);}
+  }
  },{rootMargin:'120px 0px'});
  observer.observe(work);
  window.addEventListener('scroll',update,{passive:true,signal:events.signal});
