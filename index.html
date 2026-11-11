@@ -71,18 +71,21 @@ body.component-viewing #component .eyebrow{color:#b9aea0}
 }
 @media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}}
 
-/* The original collage becomes a flexible body along the scroll path. */
-.component-work{height:280svh;min-height:1400px;position:relative;overflow:clip;overflow-clip-margin:50px}
+/* A complete viewing interval precedes the drawing and its departure. */
+.component-work{height:310svh;min-height:1550px;position:relative;overflow:clip;overflow-clip-margin:40px}
 .component-pin{position:sticky;top:clamp(80px,calc(50svh - 25.3125vw),40svh)}
 .component-fish{position:relative;width:100%;transform-origin:50% 50%;will-change:transform,opacity}
-.component-swim-part{position:absolute;transform-origin:15% 50%;will-change:transform}
+.component-swim-part{position:absolute;will-change:transform,opacity}
 .component-swim-part .component-fragment{inset:0;width:100%;height:100%}
 .component-swim-part:has(.component-fragment:hover),.component-swim-part:has(.component-fragment:focus-visible){z-index:3}
-@media(max-width:620px){.component-work{height:240svh;min-height:1100px}}
+.component-sketch{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;fill:none;stroke:#f4f1e9;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1000;stroke-dashoffset:1000}
+.component-sketch circle{fill:#f4f1e9;stroke:none}
+@media(max-width:620px){.component-work{height:270svh;min-height:1200px}}
 @media(prefers-reduced-motion:reduce){
  .component-work{height:auto;min-height:0;overflow:visible}
  .component-pin{position:static}
  .component-fish,.component-swim-part{will-change:auto}
+ .component-sketch{display:none}
 }
 </style></head><body>
 <header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a></nav></header>
@@ -179,6 +182,12 @@ function renderComponent(series) {
      <div class="component-fish">
       <img class="component-overview" loading="lazy" decoding="async" src="assets/documentary/component-collage-clear.webp" width="1600" height="900" alt="">
       ${portraits.join('')}
+      <svg class="component-sketch" viewBox="0 0 1600 900" aria-hidden="true" focusable="false">
+       <path class="sketch-body" pathLength="1000"></path>
+       <path class="sketch-gill" pathLength="1000"></path>
+       <path class="sketch-fin" pathLength="1000"></path>
+       <circle cx="275" cy="405" r="9"></circle>
+      </svg>
      </div>
     </div>
    </div>
@@ -235,60 +244,71 @@ function initComponentSwim(root) {
  const pin=root.querySelector('.component-pin');
  const fish=root.querySelector('.component-fish');
  const parts=[...root.querySelectorAll('.component-swim-part')];
+ const sketch=root.querySelector('.component-sketch');
+ const body=sketch.querySelector('.sketch-body');
+ const gill=sketch.querySelector('.sketch-gill');
+ const fin=sketch.querySelector('.sketch-fin');
+ const eye=sketch.querySelector('circle');
  const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
  const events=new AbortController();
- let frame=0,lastTime=0,current=0,target=0,width=0,visible=false;
  const clamp=n=>Math.max(0,Math.min(1,n));
- const smooth=n=>{const p=clamp(n);return p*p*(3-2*p);};
+ const smooth=n=>{const t=clamp(n);return t*t*t*(t*(t*6-15)+10);};
+ let frame=0,lastTime=0,current=0,target=0,width=0,visible=false,departureStart=null,sketchPhase=0;
 
  function measure() {
   const rect=work.getBoundingClientRect();
-  const top=parseFloat(getComputedStyle(pin).top)||0;
   width=pin.clientWidth;
-  target=clamp((top-rect.top)/Math.max(1,work.offsetHeight-pin.offsetHeight));
+  target=clamp(((parseFloat(getComputedStyle(pin).top)||0)-rect.top)/Math.max(1,work.offsetHeight-pin.offsetHeight));
  }
- function paint(progress) {
-  const wake=smooth(progress/.13);
-  const phase=progress*Math.PI*8;
-  const viewport=window.innerHeight;
-  // Joined Bezier curves share their velocity at both turns.
-  const join=.14*.24/.38;
-  const routes=[
-   [[0,0],[.10,.12],[.26,.20],[.12,.20]],
-   [[.12,.20],[.12-join,.20],[-.28+join,.20],[-.28,.20]],
-   [[-.28,.20],[-.42,.20],[-.18,.20],[-.10,.90]]
-  ];
-  const section=progress<.38?0:progress<.62?1:2;
-  const offset=[0,.38,.62][section];
-  const duration=[.38,.24,.38][section];
-  const t=clamp((progress-offset)/duration);
-  const inverse=1-t;
-  const points=routes[section];
-  const curve=axis=>inverse**3*points[0][axis]+3*inverse**2*t*points[1][axis]+3*inverse*t*t*points[2][axis]+t**3*points[3][axis];
-  const tangent=axis=>3*inverse**2*(points[1][axis]-points[0][axis])+6*inverse*t*(points[2][axis]-points[1][axis])+3*t*t*(points[3][axis]-points[2][axis]);
-  const x=curve(0)*width;
-  const y=curve(1)*viewport;
-  const heading=(Math.atan2(tangent(1)*viewport,tangent(0)*width)*180/Math.PI-180)*smooth(progress/.28);
-  const scale=1-.58*smooth(progress/.36)-.24*smooth((progress-.5)/.5);
-  const fade=1-smooth((progress-.80)/.20);
-  fish.style.transform=`translate3d(${x}px,${y}px,0) rotate(${heading+Math.sin(phase)*.65*wake}deg) scale(${scale})`;
+ function drawSketch(phase,strength) {
+  // A travelling bend grows from the steady head towards the flexible tail.
+  const bend=x=>Math.sin(phase-x/1600*5.8)*strength*((x-120)/1480)**2;
+  const point=(x,y)=>`${x},${y+bend(x)}`;
+  body.setAttribute('d',`M${point(120,450)} C${point(260,200)} ${point(820,130)} ${point(1190,420)} C${point(1300,375)} ${point(1400,275)} ${point(1510,230)} C${point(1460,370)} ${point(1460,530)} ${point(1510,670)} C${point(1400,625)} ${point(1300,525)} ${point(1190,480)} C${point(820,770)} ${point(260,700)} ${point(120,450)} Z`);
+  gill.setAttribute('d',`M${point(385,325)} Q${point(310,450)} ${point(385,575)}`);
+  fin.setAttribute('d',`M${point(635,485)} Q${point(720,580)} ${point(810,520)}`);
+  eye.setAttribute('cy',405+bend(275));
+ }
+ function paint(progress,time,delta=0) {
+  // The first 48% is reserved for viewing the complete, full-size work.
+  const morph=smooth((progress-.48)/.27);
+  const seconds=time/1000;
+  const restingPhase=seconds*2.3;
+  if(progress<.73) departureStart=null;
+  if(progress>=.76 && departureStart===null) departureStart=time;
+  const exit=departureStart===null?0:clamp(Math.max((time-departureStart)/1150,(progress-.76)/.24));
+  const glide=exit*exit;
+  const x=-(width*.82+window.innerWidth*.16)*glide;
+  const y=window.innerHeight*(.07*Math.sin(exit*Math.PI*2)+.48*glide);
+  const scale=1-.80*morph;
+  const fade=1-smooth((exit-.72)/.28);
+  fish.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`;
   fish.style.opacity=fade;
   fish.inert=fade<.01;
   parts.forEach(part=>{
    const position=Number(part.dataset.swimPosition);
-   const wave=phase-position*4.4;
-   const amplitude=width*(.0015+.014*position*position)*wake;
-   part.style.transform=`translate3d(0,${Math.sin(wave)*amplitude}px,0) rotate(${Math.cos(wave)*position*3*wake}deg)`;
+   const wave=restingPhase-position*4.4;
+   const amplitude=width*(.001+.006*position*position)*(1-morph);
+   part.style.transform=`translate3d(0,${Math.sin(wave)*amplitude}px,0)`;
+   part.style.opacity=1-smooth((morph-.16)/.72);
+   part.inert=morph>.65;
   });
+  sketch.style.opacity=smooth((morph-.12)/.62);
+  sketch.style.strokeWidth=2.8/scale;
+  sketch.style.strokeDasharray=morph>.86?'none':'1000';
+  sketch.style.strokeDashoffset=1000*(1-smooth(morph/.86));
+  sketchPhase+=delta/1000*(8+14*morph+5*exit);
+  drawSketch(sketchPhase,20+55*morph+20*exit);
+  return departureStart!==null&&exit<1;
  }
  function tick(time) {
   frame=0;
   const dt=lastTime?Math.min(50,time-lastTime):16;
   lastTime=time;
-  current+=(target-current)*(1-Math.exp(-dt/100));
+  current+=(target-current)*(1-Math.exp(-dt/105));
   if(Math.abs(target-current)<.00008) current=target;
-  paint(current);
-  if(current!==target) frame=requestAnimationFrame(tick);
+  const swimming=paint(current,time,dt);
+  if(visible && !motion.matches && (current!==target || current<.76 || swimming)) frame=requestAnimationFrame(tick);
   else lastTime=0;
  }
  function update() {
@@ -297,10 +317,11 @@ function initComponentSwim(root) {
   if(visible&&!frame) frame=requestAnimationFrame(tick);
  }
  function reset() {
-  cancelAnimationFrame(frame);frame=0;lastTime=0;
+  cancelAnimationFrame(frame);frame=0;lastTime=0;departureStart=null;
   if(motion.matches) {
    fish.style.transform='';fish.style.opacity='';fish.inert=false;
-   parts.forEach(part=>{part.style.transform='';});
+   parts.forEach(part=>{part.style.transform='';part.style.opacity='';part.inert=false;});
+   sketch.style.opacity='0';
   } else update();
  }
  const observer=new IntersectionObserver(entries=>{
@@ -308,14 +329,22 @@ function initComponentSwim(root) {
   if(visible) update();
   else {
    cancelAnimationFrame(frame);frame=0;lastTime=0;
-   if(!motion.matches) {measure();current=target;paint(current);}
+   if(!motion.matches) {
+    measure();current=target;
+    if(target===1) departureStart=performance.now()-1200;
+    paint(current,performance.now());
+   }
   }
- },{rootMargin:'120px 0px'});
+ },{rootMargin:'80px 0px'});
  observer.observe(work);
  window.addEventListener('scroll',update,{passive:true,signal:events.signal});
  window.addEventListener('resize',update,{passive:true,signal:events.signal});
+ document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0;}
+  else update();
+ },{signal:events.signal});
  motion.addEventListener('change',reset,{signal:events.signal});
- measure();paint(0);reset();
+ measure();paint(0,performance.now());reset();
  return ()=>{events.abort();observer.disconnect();cancelAnimationFrame(frame);};
 }
 function initComponent() {
