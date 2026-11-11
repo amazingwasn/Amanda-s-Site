@@ -75,7 +75,11 @@ body.component-viewing #component .eyebrow{color:#b9aea0}
 .component-work{--board-height:min(50.625vw,78svh);height:calc(var(--board-height) + 155svh);margin:24px 0 0;position:relative;overflow:clip;overflow-clip-margin:40px}
 .component-pin{position:sticky;top:max(12px,calc((100svh - var(--board-height))/2 - 2svh));width:min(100%,calc(var(--board-height) * 16 / 9));margin-inline:auto}
 #component.series{margin-bottom:38px}
-.component-statement{position:relative;margin:-16svh 0 0}
+.component-statement{position:relative;width:min(90vw,850px);margin:-16svh 0 0}
+.component-pin>.component-statement{position:absolute;top:50%;left:50%;margin:0;transform:translate(-50%,-50%);opacity:var(--statement-opacity,0);pointer-events:none}
+.component-pin>.component-statement.is-readable{pointer-events:auto}
+.component-work:has(.component-pin>.component-statement){overflow:visible}
+@media(max-width:620px){.component-statement{font-size:clamp(12px,3.6vw,15px);line-height:1.4}.component-statement p{margin:.7em 0}}
 body.component-viewing .component-statement{opacity:var(--statement-opacity,1)}
 .component-statement p:first-child{margin-top:0}
 .component-statement p:last-child{margin-bottom:0}
@@ -298,6 +302,11 @@ function initComponentSwim(root) {
  const sceneDuration=departureDuration+statementPause+statementFade;
  let frame=0,lastTime=0,current=0,target=0,width=0,visible=false,departureStart=null,sketchPhase=0;
 
+ function layoutStatement() {
+  const fits=!motion.matches&&statement.offsetHeight<=window.innerHeight*.90;
+  if(fits && statement.parentElement!==pin) pin.append(statement);
+  if(!fits && statement.parentElement===pin) root.append(statement);
+ }
  function measure() {
   const rect=work.getBoundingClientRect();
   const viewport=window.innerHeight;
@@ -331,7 +340,9 @@ function initComponentSwim(root) {
   }
   const elapsed=departureStart===null?0:time-departureStart;
   const exit=clamp(elapsed/departureDuration);
-  statement.style.setProperty('--statement-opacity',smooth((elapsed-departureDuration-statementPause)/statementFade));
+  const statementOpacity=smooth((elapsed-departureDuration-statementPause)/statementFade);
+  statement.style.setProperty('--statement-opacity',statementOpacity);
+  statement.classList.toggle('is-readable',statementOpacity>0);
   const glide=exit*exit;
   const x=-(width*.82+window.innerWidth*.16)*glide;
   const y=window.innerHeight*(.07*Math.sin(exit*Math.PI*2)+.48*glide);
@@ -372,6 +383,7 @@ function initComponentSwim(root) {
  }
  function reset() {
   cancelAnimationFrame(frame);frame=0;lastTime=0;departureStart=null;
+  layoutStatement();
   if(motion.matches) {
    fish.style.transform='';fish.style.opacity='';fish.inert=false;
    parts.forEach(part=>{part.style.transform='';part.style.opacity='';part.inert=false;});
@@ -394,13 +406,13 @@ function initComponentSwim(root) {
  },{rootMargin:'80px 0px'});
  observer.observe(work);
  window.addEventListener('scroll',update,{passive:true,signal:events.signal});
- window.addEventListener('resize',update,{passive:true,signal:events.signal});
+ window.addEventListener('resize',()=>{layoutStatement();update();},{passive:true,signal:events.signal});
  document.addEventListener('visibilitychange',()=>{
   if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0;}
   else update();
  },{signal:events.signal});
  motion.addEventListener('change',reset,{signal:events.signal});
- measure();paint(0,performance.now());reset();
+ layoutStatement();measure();paint(0,performance.now());reset();
  return ()=>{events.abort();observer.disconnect();cancelAnimationFrame(frame);};
 }
 function initComponent() {
