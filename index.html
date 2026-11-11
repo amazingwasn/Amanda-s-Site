@@ -72,17 +72,22 @@ body.component-viewing #component .eyebrow{color:#b9aea0}
 @media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}}
 
 /* A complete viewing interval precedes the drawing and its departure. */
-.component-work{height:310svh;min-height:1550px;position:relative;overflow:clip;overflow-clip-margin:40px}
-.component-pin{position:sticky;top:clamp(80px,calc(50svh - 25.3125vw),40svh)}
+.component-work{--board-height:min(50.625vw,78svh);height:calc(var(--board-height) + 155svh);margin:24px 0 0;position:relative;overflow:clip;overflow-clip-margin:40px}
+.component-pin{position:sticky;top:max(12px,calc((100svh - var(--board-height))/2 - 2svh));width:min(100%,calc(var(--board-height) * 16 / 9));margin-inline:auto}
+#component.series{margin-bottom:38px}
+.component-statement{position:relative;margin:-16svh 0 0}
+.component-statement p:first-child{margin-top:0}
+.component-statement p:last-child{margin-bottom:0}
 .component-fish{position:relative;width:100%;transform-origin:50% 50%;will-change:transform,opacity}
 .component-swim-part{position:absolute;will-change:transform,opacity}
 .component-swim-part .component-fragment{inset:0;width:100%;height:100%}
 .component-swim-part:has(.component-fragment:hover),.component-swim-part:has(.component-fragment:focus-visible){z-index:3}
 .component-sketch{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;fill:none;stroke:#f4f1e9;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1000;stroke-dashoffset:1000}
 .component-sketch circle{fill:#f4f1e9;stroke:none}
-@media(max-width:620px){.component-work{height:270svh;min-height:1200px}}
+@media(max-width:620px){.component-work{height:calc(var(--board-height) + 150svh)}}
 @media(prefers-reduced-motion:reduce){
- .component-work{height:auto;min-height:0;overflow:visible}
+ .component-work{height:auto;margin-bottom:24px;overflow:visible}
+ .component-statement{margin-top:0}
  .component-pin{position:static}
  .component-fish,.component-swim-part{will-change:auto}
  .component-sketch{display:none}
@@ -172,7 +177,7 @@ function renderComponent(series) {
   const [title,caption] = labels[i];
   return `<div class="component-swim-part" data-swim-position="${(x+w/2)/100}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%"><button type="button" class="component-fragment" data-component-fragment="${i}" data-image="${esc(safeImage(image))}" data-title="${esc(title)}" data-caption="${esc(caption)}" aria-label="${esc(title)}, fragment ${i+1} of ${series.images.length}"><span class="component-fragment-image" aria-hidden="true" style="background-size:${10000/w}% ${10000/h}%;background-position:${100*x/(100-w)}% ${100*y/(100-h)}%"></span></button></div>`;
  });
- const statement = series.text.split(/\n+/).filter(t=>t.trim()).map(t=>`<p>${esc(t)}</p>`).join('');
+ const statement = series.text.replace(/^Component[ \t]*\r?\n/,"").split(/\n+/).filter(t=>t.trim()).map(t=>`<p>${esc(t)}</p>`).join('');
  return `<article class="series" id="component" aria-labelledby="component-title">
   <p class="eyebrow">Documentary / Photography series</p>
   <h3 id="component-title">Component</h3>
@@ -213,6 +218,7 @@ function renderComponent(series) {
  </article>`;
 }
 let componentAudio;
+let lastComponentDrop=-Infinity;
 function componentTone(unlock=false) {
  try {
   if(unlock && !componentAudio) {
@@ -222,19 +228,51 @@ function componentTone(unlock=false) {
   if(unlock && componentAudio?.state==='suspended') componentAudio.resume().catch(()=>{});
   if(unlock || componentAudio?.state!=='running') return;
   const now=componentAudio.currentTime;
+  if(now-lastComponentDrop<.16) return;
+  lastComponentDrop=now;
   const tone=componentAudio.createOscillator();
   const volume=componentAudio.createGain();
   tone.type='sine';
-  tone.frequency.setValueAtTime(520,now);
-  tone.frequency.exponentialRampToValueAtTime(340,now+.09);
+  tone.frequency.setValueAtTime(620,now);
+  tone.frequency.exponentialRampToValueAtTime(1160,now+.032);
+  tone.frequency.exponentialRampToValueAtTime(920,now+.115);
   volume.gain.setValueAtTime(0,now);
-  volume.gain.linearRampToValueAtTime(.018,now+.012);
-  volume.gain.exponentialRampToValueAtTime(.0001,now+.13);
+  volume.gain.linearRampToValueAtTime(.010,now+.009);
+  volume.gain.exponentialRampToValueAtTime(.0001,now+.12);
   tone.connect(volume);
   volume.connect(componentAudio.destination);
   tone.onended=()=>{tone.disconnect();volume.disconnect();};
   tone.start(now);
   tone.stop(now+.14);
+ } catch {}
+}
+function componentWater() {
+ if(componentAudio?.state!=='running') return;
+ try {
+  const now=componentAudio.currentTime;
+  const duration=1.1;
+  const buffer=componentAudio.createBuffer(1,Math.ceil(componentAudio.sampleRate*duration),componentAudio.sampleRate);
+  const samples=buffer.getChannelData(0);
+  for(let i=0;i<samples.length;i++){
+   const ripple=.7+.16*Math.sin(i/componentAudio.sampleRate*49)+.09*Math.sin(i/componentAudio.sampleRate*83);
+   samples[i]=(Math.random()*2-1)*ripple;
+  }
+  const flow=componentAudio.createBufferSource();
+  const filter=componentAudio.createBiquadFilter();
+  const volume=componentAudio.createGain();
+  flow.buffer=buffer;
+  filter.type='bandpass';
+  filter.Q.value=.65;
+  filter.frequency.setValueAtTime(1250,now);
+  filter.frequency.exponentialRampToValueAtTime(580,now+duration);
+  volume.gain.setValueAtTime(0,now);
+  volume.gain.linearRampToValueAtTime(.032,now+.22);
+  volume.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  flow.connect(filter);
+  filter.connect(volume);
+  volume.connect(componentAudio.destination);
+  flow.onended=()=>{flow.disconnect();filter.disconnect();volume.disconnect();};
+  flow.start(now);
  } catch {}
 }
 document.addEventListener('pointerdown',()=>componentTone(true),{once:true,capture:true});
@@ -253,12 +291,20 @@ function initComponentSwim(root) {
  const events=new AbortController();
  const clamp=n=>Math.max(0,Math.min(1,n));
  const smooth=n=>{const t=clamp(n);return t*t*t*(t*(t*6-15)+10);};
+ const departurePoint=.98,departureDuration=1150;
  let frame=0,lastTime=0,current=0,target=0,width=0,visible=false,departureStart=null,sketchPhase=0;
 
  function measure() {
   const rect=work.getBoundingClientRect();
+  const viewport=window.innerHeight;
+  document.body.classList.toggle('component-viewing',rect.height>0 && rect.top<viewport*.80 && rect.bottom>viewport*.30);
   width=pin.clientWidth;
-  target=clamp(((parseFloat(getComputedStyle(pin).top)||0)-rect.top)/Math.max(1,work.offsetHeight-pin.offsetHeight));
+  const pinTop=parseFloat(getComputedStyle(pin).top)||0;
+  const pinBottom=pinTop+pin.offsetHeight;
+  // Time the exit for when the statement has started entering the viewport.
+  const statementLead=Math.max(0,viewport*.87-pinBottom);
+  const viewingDistance=Math.max(1,work.offsetHeight-pin.offsetHeight-statementLead);
+  target=clamp((pinTop-rect.top)/viewingDistance);
  }
  function drawSketch(phase,strength) {
   // A travelling bend grows from the steady head towards the flexible tail.
@@ -270,13 +316,16 @@ function initComponentSwim(root) {
   eye.setAttribute('cy',405+bend(275));
  }
  function paint(progress,time,delta=0) {
-  // The first 48% is reserved for viewing the complete, full-size work.
-  const morph=smooth((progress-.48)/.27);
+  // Keep a full-size viewing interval, then finish drawing before departure.
+  const morph=smooth((progress-.62)/.34);
   const seconds=time/1000;
   const restingPhase=seconds*2.3;
-  if(progress<.73) departureStart=null;
-  if(progress>=.76 && departureStart===null) departureStart=time;
-  const exit=departureStart===null?0:clamp(Math.max((time-departureStart)/1150,(progress-.76)/.24));
+  if(progress<departurePoint-.035) departureStart=null;
+  if(progress>=departurePoint && departureStart===null) {
+   departureStart=time;
+   if(visible&&!document.hidden) componentWater();
+  }
+  const exit=departureStart===null?0:clamp((time-departureStart)/departureDuration);
   const glide=exit*exit;
   const x=-(width*.82+window.innerWidth*.16)*glide;
   const y=window.innerHeight*(.07*Math.sin(exit*Math.PI*2)+.48*glide);
@@ -308,13 +357,12 @@ function initComponentSwim(root) {
   current+=(target-current)*(1-Math.exp(-dt/105));
   if(Math.abs(target-current)<.00008) current=target;
   const swimming=paint(current,time,dt);
-  if(visible && !motion.matches && (current!==target || current<.76 || swimming)) frame=requestAnimationFrame(tick);
+  if(visible && !motion.matches && (current!==target || current<departurePoint || swimming)) frame=requestAnimationFrame(tick);
   else lastTime=0;
  }
  function update() {
-  if(motion.matches) return;
   measure();
-  if(visible&&!frame) frame=requestAnimationFrame(tick);
+  if(!motion.matches&&visible&&!frame) frame=requestAnimationFrame(tick);
  }
  function reset() {
   cancelAnimationFrame(frame);frame=0;lastTime=0;departureStart=null;
@@ -329,9 +377,10 @@ function initComponentSwim(root) {
   if(visible) update();
   else {
    cancelAnimationFrame(frame);frame=0;lastTime=0;
+   measure();
    if(!motion.matches) {
-    measure();current=target;
-    if(target===1) departureStart=performance.now()-1200;
+    current=target;
+    if(target===1) departureStart=performance.now()-departureDuration;
     paint(current,performance.now());
    }
   }
@@ -349,14 +398,9 @@ function initComponentSwim(root) {
 }
 function initComponent() {
  initComponent.cleanup?.();
- initComponent.observer?.disconnect();
  document.body.classList.remove('component-viewing');
  const root = document.querySelector('#component');
  if (!root) return;
- initComponent.observer=new IntersectionObserver(entries=>{
-  document.body.classList.toggle('component-viewing',entries[0].isIntersecting);
- },{rootMargin:'-20% 0px -20% 0px'});
- initComponent.observer.observe(root);
  initComponent.cleanup=initComponentSwim(root);
  const fragments = [...root.querySelectorAll('[data-component-fragment]')];
  const dialog = root.querySelector('.component-dialog');
