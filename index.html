@@ -72,13 +72,13 @@ body.component-viewing #component .eyebrow{color:#b9aea0}
 @media(prefers-reduced-motion:reduce){.component-dialog[open]{animation:none}}
 
 /* The original collage becomes a flexible body along the scroll path. */
-.component-work{height:220svh;min-height:1100px;position:relative;overflow:clip;overflow-clip-margin:50px}
+.component-work{height:280svh;min-height:1400px;position:relative;overflow:clip;overflow-clip-margin:50px}
 .component-pin{position:sticky;top:clamp(80px,calc(50svh - 25.3125vw),40svh)}
-.component-fish{position:relative;width:100%;transform-origin:42% 50%;will-change:transform,opacity}
+.component-fish{position:relative;width:100%;transform-origin:50% 50%;will-change:transform,opacity}
 .component-swim-part{position:absolute;transform-origin:15% 50%;will-change:transform}
 .component-swim-part .component-fragment{inset:0;width:100%;height:100%}
 .component-swim-part:has(.component-fragment:hover),.component-swim-part:has(.component-fragment:focus-visible){z-index:3}
-@media(max-width:620px){.component-work{height:180svh;min-height:850px}}
+@media(max-width:620px){.component-work{height:240svh;min-height:1100px}}
 @media(prefers-reduced-motion:reduce){
  .component-work{height:auto;min-height:0;overflow:visible}
  .component-pin{position:static}
@@ -249,28 +249,43 @@ function initComponentSwim(root) {
  }
  function paint(progress) {
   const wake=smooth(progress/.13);
-  const departure=smooth((progress-.36)/.64);
-  const phase=progress*Math.PI*6;
-  const fade=1-smooth((progress-.76)/.24);
-  const drift=-width*1.18*departure;
-  const lift=Math.sin(progress*Math.PI)*width*.055;
-  const scale=1-.24*departure;
-  fish.style.transform=`translate3d(${drift}px,${-lift}px,0) rotate(${Math.sin(phase)*1.2*wake}deg) scale(${scale})`;
+  const phase=progress*Math.PI*8;
+  const viewport=window.innerHeight;
+  // Joined Bezier curves share their velocity at both turns.
+  const join=.14*.24/.38;
+  const routes=[
+   [[0,0],[0,.13],[.34,.18],[.20,.18]],
+   [[.20,.18],[.20-join,.18],[-.24+join,.18],[-.24,.18]],
+   [[-.24,.18],[-.38,.18],[-.18,.65],[-.10,.90]]
+  ];
+  const section=progress<.38?0:progress<.62?1:2;
+  const offset=[0,.38,.62][section];
+  const duration=[.38,.24,.38][section];
+  const t=clamp((progress-offset)/duration);
+  const inverse=1-t;
+  const points=routes[section];
+  const curve=axis=>inverse**3*points[0][axis]+3*inverse**2*t*points[1][axis]+3*inverse*t*t*points[2][axis]+t**3*points[3][axis];
+  const tangent=axis=>3*inverse**2*(points[1][axis]-points[0][axis])+6*inverse*t*(points[2][axis]-points[1][axis])+3*t*t*(points[3][axis]-points[2][axis]);
+  const x=curve(0)*width;
+  const y=curve(1)*viewport;
+  const heading=(Math.atan2(tangent(1)*viewport,tangent(0)*width)*180/Math.PI-180)*smooth(progress/.28);
+  const scale=1-.58*smooth(progress/.36)-.24*smooth((progress-.5)/.5);
+  const fade=1-smooth((progress-.80)/.20);
+  fish.style.transform=`translate3d(${x}px,${y}px,0) rotate(${heading+Math.sin(phase)*.65*wake}deg) scale(${scale})`;
   fish.style.opacity=fade;
   fish.inert=fade<.01;
   parts.forEach(part=>{
    const position=Number(part.dataset.swimPosition);
    const wave=phase-position*4.4;
-   const amplitude=width*(.002+.024*position*position)*wake;
-   const bend=Math.sin(wave);
-   part.style.transform=`translate3d(0,${bend*amplitude}px,0) rotate(${Math.cos(wave)*position*5*wake}deg)`;
+   const amplitude=width*(.0015+.014*position*position)*wake;
+   part.style.transform=`translate3d(0,${Math.sin(wave)*amplitude}px,0) rotate(${Math.cos(wave)*position*3*wake}deg)`;
   });
  }
  function tick(time) {
   frame=0;
   const dt=lastTime?Math.min(50,time-lastTime):16;
   lastTime=time;
-  current+=(target-current)*(1-Math.exp(-dt/85));
+  current+=(target-current)*(1-Math.exp(-dt/100));
   if(Math.abs(target-current)<.00008) current=target;
   paint(current);
   if(current!==target) frame=requestAnimationFrame(tick);
