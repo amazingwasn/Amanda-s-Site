@@ -76,6 +76,7 @@ body.component-viewing #component .eyebrow{color:#b9aea0}
 .component-pin{position:sticky;top:max(12px,calc((100svh - var(--board-height))/2 - 2svh));width:min(100%,calc(var(--board-height) * 16 / 9));margin-inline:auto}
 #component.series{margin-bottom:38px}
 .component-statement{position:relative;margin:-16svh 0 0}
+body.component-viewing .component-statement{opacity:var(--statement-opacity,1)}
 .component-statement p:first-child{margin-top:0}
 .component-statement p:last-child{margin-bottom:0}
 .component-fish{position:relative;width:100%;transform-origin:50% 50%;will-change:transform,opacity}
@@ -283,6 +284,7 @@ function initComponentSwim(root) {
  const fish=root.querySelector('.component-fish');
  const parts=[...root.querySelectorAll('.component-swim-part')];
  const sketch=root.querySelector('.component-sketch');
+ const statement=root.querySelector('.component-statement');
  const body=sketch.querySelector('.sketch-body');
  const gill=sketch.querySelector('.sketch-gill');
  const fin=sketch.querySelector('.sketch-fin');
@@ -292,6 +294,8 @@ function initComponentSwim(root) {
  const clamp=n=>Math.max(0,Math.min(1,n));
  const smooth=n=>{const t=clamp(n);return t*t*t*(t*(t*6-15)+10);};
  const departurePoint=.98,departureDuration=1150;
+ const statementPause=180,statementFade=280;
+ const sceneDuration=departureDuration+statementPause+statementFade;
  let frame=0,lastTime=0,current=0,target=0,width=0,visible=false,departureStart=null,sketchPhase=0;
 
  function measure() {
@@ -325,7 +329,9 @@ function initComponentSwim(root) {
    departureStart=time;
    if(visible&&!document.hidden) componentWater();
   }
-  const exit=departureStart===null?0:clamp((time-departureStart)/departureDuration);
+  const elapsed=departureStart===null?0:time-departureStart;
+  const exit=clamp(elapsed/departureDuration);
+  statement.style.setProperty('--statement-opacity',smooth((elapsed-departureDuration-statementPause)/statementFade));
   const glide=exit*exit;
   const x=-(width*.82+window.innerWidth*.16)*glide;
   const y=window.innerHeight*(.07*Math.sin(exit*Math.PI*2)+.48*glide);
@@ -348,7 +354,7 @@ function initComponentSwim(root) {
   sketch.style.strokeDashoffset=1000*(1-smooth(morph/.86));
   sketchPhase+=delta/1000*(8+14*morph+5*exit);
   drawSketch(sketchPhase,20+55*morph+20*exit);
-  return departureStart!==null&&exit<1;
+  return departureStart!==null&&elapsed<sceneDuration;
  }
  function tick(time) {
   frame=0;
@@ -370,6 +376,7 @@ function initComponentSwim(root) {
    fish.style.transform='';fish.style.opacity='';fish.inert=false;
    parts.forEach(part=>{part.style.transform='';part.style.opacity='';part.inert=false;});
    sketch.style.opacity='0';
+   statement.style.removeProperty('--statement-opacity');
   } else update();
  }
  const observer=new IntersectionObserver(entries=>{
@@ -380,7 +387,7 @@ function initComponentSwim(root) {
    measure();
    if(!motion.matches) {
     current=target;
-    if(target===1) departureStart=performance.now()-departureDuration;
+    if(target===1) departureStart=performance.now()-sceneDuration;
     paint(current,performance.now());
    }
   }
