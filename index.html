@@ -254,9 +254,9 @@ function initComponentSwim(root) {
   // Joined Bezier curves share their velocity at both turns.
   const join=.14*.24/.38;
   const routes=[
-   [[0,0],[0,.18],[.34,.18],[.20,.18]],
-   [[.20,.18],[.20-join,.18],[-.24+join,.18],[-.24,.18]],
-   [[-.24,.18],[-.38,.18],[-.18,.18],[-.10,.90]]
+   [[0,0],[.10,.12],[.26,.20],[.12,.20]],
+   [[.12,.20],[.12-join,.20],[-.28+join,.20],[-.28,.20]],
+   [[-.28,.20],[-.42,.20],[-.18,.20],[-.10,.90]]
   ];
   const section=progress<.38?0:progress<.62?1:2;
   const offset=[0,.38,.62][section];
