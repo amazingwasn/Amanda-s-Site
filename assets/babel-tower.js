@@ -1,6 +1,8 @@
 import { Body, ConvexPolyhedron, Plane, SAPBroadphase, Vec3, World } from './vendor/cannon-es-0.20.0.js';
 
-const holdLimit = 5000;
+const holdLimit = 6000;
+const waveInterval = 60_000;
+const waveDuration = 2700;
 const remapInterval = 3000;
 const blockHeight = .84;
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -24,9 +26,10 @@ const artwork = '<dialog class="babel-game" aria-labelledby="babel-game-title">'
   '<div class="babel-scene-status"><strong data-babel-status>Hold to lift</strong><span data-babel-time></span></div>' +
   '<div class="babel-hold-meter" aria-hidden="true"><i></i></div></div>' +
   '<div class="babel-panel"><dl class="babel-scores"><div><dt>Height</dt><dd data-babel-height>0.0</dd></div><div><dt>Best</dt><dd data-babel-best>0.0</dd></div></dl>' +
+  '<div class="babel-control-heading"><span>Next wave</span><span data-babel-wave>1:00</span></div>' +
   '<div class="babel-controls"><div class="babel-control-heading"><span>Direction keys</span><span data-babel-remap>3.0 s</span></div>' +
   '<div class="babel-keys">' + directions.map((direction,index) => '<button type="button" data-babel-direction="' + index + '"><span class="babel-key-direction">' + direction.arrow + ' ' + direction.name + '</span><kbd></kbd></button>').join('') + '</div></div>' +
-  '<p class="babel-instructions">Hold down a trackpad click or touch the sand. Move with the letters shown and release to drop. The keys change after a move or three seconds. You have five seconds before the block falls.</p>' +
+  '<p class="babel-instructions">Hold down a trackpad click or touch the sand. Move with the letters shown and release to drop. The keys change after a move or three seconds. You have six seconds before the block falls. A wave hits the beach every minute.</p>' +
   '<button type="button" class="babel-reset">Start again</button></div></div></dialog>';
 
 function makeWorld() {
@@ -67,7 +70,7 @@ function makeRenderer(canvas) {
     ctx.closePath();
   }
 
-  return (blocks, held, tallest, dt) => {
+  return (blocks, held, tallest, dt, wave) => {
     const w=canvas.clientWidth, h=canvas.clientHeight;
     if(!w || !h) return;
     const ratio=Math.min(window.devicePixelRatio||1,2);
@@ -107,6 +110,21 @@ function makeRenderer(canvas) {
         ctx.strokeStyle=i===0?'#f3deb363':'#edcf9e24';ctx.stroke();
       }
     }
+    if(wave){
+      const shore=[];
+      for(let x=-7;x<=7;x+=.4){
+        const ripple=.17*Math.sin(x*1.35+wave.front*.85);
+        shore.push(project({x,y:.025,z:wave.front+ripple}));
+      }
+      const water=[project({x:-7,y:.025,z:-7.5}),project({x:7,y:.025,z:-7.5}),...shore.slice().reverse()];
+      ctx.save();
+      ctx.globalAlpha=wave.opacity;
+      polygon(water);ctx.fillStyle='#618c91b0';ctx.fill();
+      ctx.beginPath();
+      shore.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));
+      ctx.lineWidth=2;ctx.strokeStyle='#efe9d5cc';ctx.stroke();
+      ctx.restore();
+    }
     const visibleFaces=[];
     function drawBlock(body, carried) {
       const {x,y,z}=body.position;
@@ -145,6 +163,7 @@ function createGame() {
   const status=dialog.querySelector('[data-babel-status]');
   const time=dialog.querySelector('[data-babel-time]');
   const remap=dialog.querySelector('[data-babel-remap]');
+  const waveLabel=dialog.querySelector('[data-babel-wave]');
   const heightLabel=dialog.querySelector('[data-babel-height]');
   const bestLabel=dialog.querySelector('[data-babel-best]');
   const meter=dialog.querySelector('.babel-hold-meter i');
@@ -153,6 +172,7 @@ function createGame() {
   let world=makeWorld(), blocks=[], held=null, pointer=null, lastDrop=null;
   let lettersByDirection=[], remapAt=0, holdUntil=0, landedAt=0;
   let frame=0, previous=0, best=0, opener;
+  let playTime=0, nextWave=waveInterval, waveStart=-Infinity, swept=new WeakSet();
 
   function shuffle(now) {
     const pool=letters.filter(letter=>!lettersByDirection.includes(letter));
@@ -206,11 +226,37 @@ function createGame() {
     pointer=null;
   }
 
+  function advanceWave() {
+    if(playTime>=nextWave){
+      waveStart=nextWave+Math.floor((playTime-nextWave)/waveInterval)*waveInterval;
+      nextWave=waveStart+waveInterval;
+      swept=new WeakSet();
+    }
+    const age=playTime-waveStart;
+    const seconds=Math.ceil((nextWave-playTime)/1000);
+    waveLabel.textContent=age<waveDuration?'Breaking':Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+    if(age>=waveDuration) return null;
+
+    const surge=clamp(age/1750,0,1);
+    const front=-5.8+11.6*surge;
+    for(const body of blocks){
+      const {x,y,z}=body.position;
+      if(swept.has(body)||y>1.05||z>front+.5||z<front-1.8) continue;
+      swept.add(body);
+      body.wakeUp();
+      body.applyImpulse(new Vec3(.14*Math.sin(x*1.3),.04,5.0+.45*Math.cos(x*.9)),new Vec3(0,.10,0));
+    }
+    return {front,opacity:Math.min(1,age/200)*clamp((waveDuration-age)/950,0,1)};
+  }
+
   function tick(now) {
-    const dt=previous?Math.min(.06,(now-previous)/1000):1/60;
+    const elapsed=previous?now-previous:0;
+    const dt=elapsed?Math.min(.06,elapsed/1000):1/60;
     previous=now;
+    playTime+=elapsed;
     if(now>=remapAt) shuffle(now);
     if(held && now>=holdUntil) drop(now);
+    const wave=advanceWave();
     world.step(1/120,dt,8);
     const top=highestPoint();
     const ready=canLift(now);
@@ -222,7 +268,7 @@ function createGame() {
     time.textContent=held?(remaining/1000).toFixed(1)+' s':'';
     meter.style.transform='scaleX('+(remaining/holdLimit)+')';
     remap.textContent=(Math.max(0,remapAt-now)/1000).toFixed(1)+' s';
-    render(blocks,held,top,dt);
+    render(blocks,held,top,dt,wave);
     frame=requestAnimationFrame(tick);
   }
 
@@ -256,6 +302,7 @@ function createGame() {
   });
   dialog.querySelector('.babel-reset').addEventListener('click',()=>{
     world=makeWorld();blocks=[];held=null;pointer=null;lastDrop=null;
+    playTime=0;nextWave=waveInterval;waveStart=-Infinity;swept=new WeakSet();
     shuffle(performance.now());
     canvas.focus({preventScroll:true});
   });
@@ -265,6 +312,7 @@ function createGame() {
     held=null;pointer=null;
     opener?.focus({preventScroll:true});
   });
+  document.addEventListener('visibilitychange',()=>{previous=0;});
   window.addEventListener('blur',()=>{
     if(!dialog.open) return;
     drop(performance.now());pointer=null;
