@@ -1,8 +1,10 @@
 import { Body, ConvexPolyhedron, Plane, SAPBroadphase, Vec3, World } from './vendor/cannon-es-0.20.0.js';
 
 const holdLimit = 6000;
-const waveInterval = 60_000;
-const waveDuration = 2700;
+const waveAdvance = 2700;
+const waveDuration = 4650;
+const nextWaveDelay = () => (30 + Math.floor(Math.random()*36))*1000;
+const nextWaveLevel = () => 1 + Math.floor(Math.random()*10);
 const remapInterval = 3000;
 const blockHeight = .84;
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -26,10 +28,10 @@ const artwork = '<dialog class="babel-game" aria-labelledby="babel-game-title">'
   '<div class="babel-scene-status"><strong data-babel-status>Hold to lift</strong><span data-babel-time></span></div>' +
   '<div class="babel-hold-meter" aria-hidden="true"><i></i></div></div>' +
   '<div class="babel-panel"><dl class="babel-scores"><div><dt>Height</dt><dd data-babel-height>0.0</dd></div><div><dt>Best</dt><dd data-babel-best>0.0</dd></div></dl>' +
-  '<div class="babel-control-heading"><span>Next wave</span><span data-babel-wave>1:00</span></div>' +
+  '<div class="babel-control-heading"><span>Next wave</span><span data-babel-wave>—</span></div>' +
   '<div class="babel-controls"><div class="babel-control-heading"><span>Direction keys</span><span data-babel-remap>3.0 s</span></div>' +
   '<div class="babel-keys">' + directions.map((direction,index) => '<button type="button" data-babel-direction="' + index + '"><span class="babel-key-direction">' + direction.arrow + ' ' + direction.name + '</span><kbd></kbd></button>').join('') + '</div></div>' +
-  '<p class="babel-instructions">Hold down a trackpad click or touch the sand. Move with the letters shown and release to drop. The keys change after a move or three seconds. You have six seconds before the block falls. A wave hits the beach every minute.</p>' +
+  '<p class="babel-instructions">Hold down a trackpad click or touch the sand. Move with the letters shown and release to drop. The keys change after a move or three seconds. You have six seconds before the block falls. Waves arrive every 30–65 seconds at strength 1–10.</p>' +
   '<button type="button" class="babel-reset">Start again</button></div></div></dialog>';
 
 function makeWorld() {
@@ -46,6 +48,61 @@ function makeWorld() {
 
 function blockPoints(body) {
   return vertices.map(vertex => body.quaternion.vmult(vertex).vadd(body.position));
+}
+
+
+function addWaveSurfaces(wave, project, surfaces) {
+  const columns=36;
+  const left=-11.5, right=11.5;
+  const offsets=[-1.9,-.9,-.34,0,.24,.51,.82,1.16,1.55,2.2,3.2,4.8,7,10,14,19];
+  const roll=(x,offset)=>{
+    const ripple=Math.sin(x*.62+wave.age*2.3)*.28+Math.sin(x*1.7-wave.age*3.6)*.10;
+    const crest=Math.exp(-(((offset-.82)/1.08)**2));
+    const uneven=.85+.12*Math.sin(x*.8-wave.age*3.2)+.07*Math.cos(x*1.9);
+    const depth=offset<0?.025*(1+offset/2):.05;
+    const y=Math.max(.018,depth)+wave.rise*crest*uneven;
+    return project({x,y,z:wave.front-offset+ripple});
+  };
+  const rows=offsets.map(offset=>Array.from({length:columns+1},(_,i)=>roll(left+(right-left)*i/columns,offset)));
+  function add(points,color,opacity,kind='water') {
+    const depth=points.reduce((sum,p)=>sum+p.depth,0)/points.length;
+    surfaces.push({screen:points,color,depth,opacity,kind});
+  }
+
+  for(let row=0;row<rows.length-1;row++){
+    for(let column=0;column<columns;column++){
+      const points=[rows[row][column],rows[row][column+1],rows[row+1][column+1],rows[row+1][column]];
+      const detail=Math.sin(column*.89+row*1.7-wave.age*7)*.045;
+      const onFace=row>=3&&row<=6;
+      const brightness=Math.round((onFace?38+row*3:31)+detail*85);
+      const edgeFade=clamp((20-offsets[row])/9,0,1);
+      const opacity=wave.opacity*edgeFade*clamp((onFace?.76:.42)+detail,0,1);
+      add(points,'hsl('+(onFace?178:186)+' 31% '+brightness+'%)',opacity);
+    }
+  }
+
+  for(let i=0;i<columns;i++){
+    const bright=.57+.35*Math.sin(i*1.17-wave.age*7);
+    add([rows[3][i],rows[3][i+1]],'#e0ede1',wave.opacity*bright,'foam');
+    if(i%4!==1){
+      add([rows[6][i],rows[6][i+1]],'#f5f5dd',wave.opacity*(.55+.34*wave.energy),'crest');
+    }
+    const x=left+(right-left)*(i+.35)/columns;
+    const foamOffset=-.38-.60*(.5+.5*Math.sin(i*2.39+wave.age*4));
+    const drift=.17*Math.sin(i*1.83-wave.age*5);
+    add([roll(x,foamOffset),roll(x+.19,foamOffset-.11+drift),roll(x+.39,foamOffset-.14+drift),roll(x+.58,foamOffset+.08)],'#e8e8d5',wave.opacity*bright*.60,'foam');
+  }
+
+  if(wave.energy>.1){
+    for(let i=0;i<62;i++){
+      const lane=(i*17%67)/67;
+      const t=(wave.age*(1.7+(i%7)*.14)+i*.381)%1;
+      const x=left+(right-left)*lane+Math.sin(i*2.39)*t*.42;
+      const y=wave.rise*(.55+.12*Math.sin(i))+t*(1-t)*wave.rise*1.45;
+      const point=project({x,y,z:wave.front-.65+t*(.65+i%5*.10)});
+      add([point],'#eff6e7',wave.opacity*wave.energy*(1-t)*.8,'spray');
+    }
+  }
 }
 
 function makeRenderer(canvas) {
@@ -110,21 +167,6 @@ function makeRenderer(canvas) {
         ctx.strokeStyle=i===0?'#f3deb363':'#edcf9e24';ctx.stroke();
       }
     }
-    if(wave){
-      const shore=[];
-      for(let x=-7;x<=7;x+=.4){
-        const ripple=.17*Math.sin(x*1.35+wave.front*.85);
-        shore.push(project({x,y:.025,z:wave.front+ripple}));
-      }
-      const water=[project({x:-7,y:.025,z:-7.5}),project({x:7,y:.025,z:-7.5}),...shore.slice().reverse()];
-      ctx.save();
-      ctx.globalAlpha=wave.opacity;
-      polygon(water);ctx.fillStyle='#618c91b0';ctx.fill();
-      ctx.beginPath();
-      shore.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));
-      ctx.lineWidth=2;ctx.strokeStyle='#efe9d5cc';ctx.stroke();
-      ctx.restore();
-    }
     const visibleFaces=[];
     function drawBlock(body, carried) {
       const {x,y,z}=body.position;
@@ -146,11 +188,27 @@ function makeRenderer(canvas) {
     }
     blocks.forEach(body=>drawBlock(body,false));
     if(held) drawBlock(held,true);
+    if(wave) addWaveSurfaces(wave,project,visibleFaces);
     visibleFaces.sort((a,b)=>b.depth-a.depth);
     for(const face of visibleFaces){
-      polygon(face.screen);ctx.fillStyle=face.color;ctx.fill();
-      ctx.fillStyle=pattern;ctx.fill();ctx.strokeStyle='#50372568';ctx.lineWidth=.75;ctx.stroke();
+      if(face.kind==='spray'){
+        ctx.globalAlpha=face.opacity;
+        ctx.fillStyle=face.color;
+        ctx.fillRect(face.screen[0].x,face.screen[0].y,1.8,1.8);
+      } else if(face.kind==='foam'||face.kind==='crest'){
+        ctx.globalAlpha=face.opacity;
+        ctx.beginPath();
+        face.screen.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+        ctx.strokeStyle=face.color;ctx.lineWidth=face.kind==='crest'?2.5:1.15;ctx.stroke();
+      } else {
+        ctx.globalAlpha=face.opacity??1;
+        polygon(face.screen);ctx.fillStyle=face.color;ctx.fill();
+        if(!face.kind){
+          ctx.fillStyle=pattern;ctx.fill();ctx.strokeStyle='#50372568';ctx.lineWidth=.75;ctx.stroke();
+        }
+      }
     }
+    ctx.globalAlpha=1;
   };
 }
 
@@ -172,7 +230,7 @@ function createGame() {
   let world=makeWorld(), blocks=[], held=null, pointer=null, lastDrop=null;
   let lettersByDirection=[], remapAt=0, holdUntil=0, landedAt=0;
   let frame=0, previous=0, best=0, opener;
-  let playTime=0, nextWave=waveInterval, waveStart=-Infinity, swept=new WeakSet();
+  let playTime=0, nextWave=nextWaveDelay(), waveStart=-Infinity, waveLevel=0, swept=new WeakSet();
 
   function shuffle(now) {
     const pool=letters.filter(letter=>!lettersByDirection.includes(letter));
@@ -228,25 +286,32 @@ function createGame() {
 
   function advanceWave() {
     if(playTime>=nextWave){
-      waveStart=nextWave+Math.floor((playTime-nextWave)/waveInterval)*waveInterval;
-      nextWave=waveStart+waveInterval;
+      waveStart=nextWave;
+      waveLevel=nextWaveLevel();
+      nextWave=playTime+nextWaveDelay();
       swept=new WeakSet();
     }
     const age=playTime-waveStart;
     const seconds=Math.ceil((nextWave-playTime)/1000);
-    waveLabel.textContent=age<waveDuration?'Breaking':Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+    waveLabel.textContent=age<waveDuration?'Wave · '+waveLevel+'/10':Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
     if(age>=waveDuration) return null;
 
-    const surge=clamp(age/1750,0,1);
-    const front=-5.8+11.6*surge;
-    for(const body of blocks){
-      const {x,y,z}=body.position;
-      if(swept.has(body)||y>1.05||z>front+.5||z<front-1.8) continue;
-      swept.add(body);
-      body.wakeUp();
-      body.applyImpulse(new Vec3(.14*Math.sin(x*1.3),.04,5.0+.45*Math.cos(x*.9)),new Vec3(0,.10,0));
+    const surge=clamp(age/waveAdvance,0,1);
+    const retreat=clamp((age-waveAdvance)/(waveDuration-waveAdvance),0,1);
+    const front=-8.8+17.8*(surge*(.72+.28*surge)-retreat*retreat*(3-2*retreat));
+    const height=.28+.23*waveLevel;
+    if(age<waveAdvance){
+      for(const body of blocks){
+        const {x,y,z}=body.position;
+        if(swept.has(body)||y>.65+height*.6||z>front+.35||z<front-2.1) continue;
+        swept.add(body);
+        body.wakeUp();
+        const impulse=3.65+.48*waveLevel;
+        body.applyImpulse(new Vec3(.2*Math.sin(x*1.3),.035*waveLevel,impulse),new Vec3(0,.10,0));
+      }
     }
-    return {front,opacity:Math.min(1,age/200)*clamp((waveDuration-age)/950,0,1)};
+    const energy=clamp(age/440,0,1)*clamp((waveAdvance+120-age)/1050,0,1);
+    return {front,age:age/1000,energy,rise:height*energy,opacity:clamp(age/260,0,1)*clamp((waveDuration-age)/650,0,1)};
   }
 
   function tick(now) {
@@ -302,7 +367,7 @@ function createGame() {
   });
   dialog.querySelector('.babel-reset').addEventListener('click',()=>{
     world=makeWorld();blocks=[];held=null;pointer=null;lastDrop=null;
-    playTime=0;nextWave=waveInterval;waveStart=-Infinity;swept=new WeakSet();
+    playTime=0;nextWave=nextWaveDelay();waveStart=-Infinity;waveLevel=0;swept=new WeakSet();
     shuffle(performance.now());
     canvas.focus({preventScroll:true});
   });
