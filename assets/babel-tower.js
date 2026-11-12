@@ -1,8 +1,8 @@
 import { Body, ConvexPolyhedron, Plane, SAPBroadphase, Vec3, World } from './vendor/cannon-es-0.20.0.js';
 
 const holdLimit = 6000;
-const waveAdvance = 2700;
-const waveDuration = 4650;
+const waveAdvance = 3000;
+const waveDuration = 5200;
 const nextWaveDelay = () => (30 + Math.floor(Math.random()*36))*1000;
 const nextWaveLevel = () => 1 + Math.floor(Math.random()*10);
 const remapInterval = 3000;
@@ -61,7 +61,7 @@ function addWaveSurfaces(wave, project, surfaces) {
     const uneven=.85+.12*Math.sin(x*.8-wave.age*3.2)+.07*Math.cos(x*1.9);
     const depth=offset<0?.025*(1+offset/2):.05;
     const y=Math.max(.018,depth)+wave.rise*crest*uneven;
-    return project({x,y,z:wave.front-offset+ripple});
+    return project({x,y,z:wave.front-offset*wave.thickness+ripple});
   };
   const rows=offsets.map(offset=>Array.from({length:columns+1},(_,i)=>roll(left+(right-left)*i/columns,offset)));
   function add(points,color,opacity,kind='water') {
@@ -76,7 +76,7 @@ function addWaveSurfaces(wave, project, surfaces) {
       const onFace=row>=3&&row<=6;
       const brightness=Math.round((onFace?38+row*3:31)+detail*85);
       const edgeFade=clamp((20-offsets[row])/9,0,1);
-      const opacity=wave.opacity*edgeFade*clamp((onFace?.76:.42)+detail,0,1);
+      const opacity=wave.opacity*edgeFade*clamp((onFace?.9:.46)+detail,0,1);
       add(points,'hsl('+(onFace?178:186)+' 31% '+brightness+'%)',opacity);
     }
   }
@@ -94,12 +94,12 @@ function addWaveSurfaces(wave, project, surfaces) {
   }
 
   if(wave.energy>.1){
-    for(let i=0;i<62;i++){
-      const lane=(i*17%67)/67;
+    for(let i=0;i<91;i++){
+      const lane=(i*37%97)/97;
       const t=(wave.age*(1.7+(i%7)*.14)+i*.381)%1;
       const x=left+(right-left)*lane+Math.sin(i*2.39)*t*.42;
-      const y=wave.rise*(.55+.12*Math.sin(i))+t*(1-t)*wave.rise*1.45;
-      const point=project({x,y,z:wave.front-.65+t*(.65+i%5*.10)});
+      const y=wave.rise*(.75+.14*Math.sin(i))+t*(1-t)*wave.rise*1.65;
+      const point=project({x,y,z:wave.front-.95*wave.thickness+t*(.9+i%5*.14)});
       add([point],'#eff6e7',wave.opacity*wave.energy*(1-t)*.8,'spray');
     }
   }
@@ -298,20 +298,21 @@ function createGame() {
 
     const surge=clamp(age/waveAdvance,0,1);
     const retreat=clamp((age-waveAdvance)/(waveDuration-waveAdvance),0,1);
-    const front=-8.8+17.8*(surge*(.72+.28*surge)-retreat*retreat*(3-2*retreat));
-    const height=.28+.23*waveLevel;
+    const front=-11.6+22.4*(surge*(.72+.28*surge)-retreat*retreat*(3-2*retreat));
+    const energy=clamp(age/580,0,1)*clamp((waveAdvance+200-age)/980,0,1);
+    const rise=(2.35+.58*waveLevel)*energy;
+    const thickness=1.24+.055*waveLevel;
     if(age<waveAdvance){
       for(const body of blocks){
         const {x,y,z}=body.position;
-        if(swept.has(body)||y>.65+height*.6||z>front+.35||z<front-2.1) continue;
+        if(swept.has(body)||y>.5+rise*.66||z>front+.35||z<front-2.1*thickness) continue;
         swept.add(body);
         body.wakeUp();
-        const impulse=3.65+.48*waveLevel;
+        const impulse=4+.57*waveLevel;
         body.applyImpulse(new Vec3(.2*Math.sin(x*1.3),.035*waveLevel,impulse),new Vec3(0,.10,0));
       }
     }
-    const energy=clamp(age/440,0,1)*clamp((waveAdvance+120-age)/1050,0,1);
-    return {front,age:age/1000,energy,rise:height*energy,opacity:clamp(age/260,0,1)*clamp((waveDuration-age)/650,0,1)};
+    return {front,age:age/1000,energy,rise,thickness,opacity:clamp(age/260,0,1)*clamp((waveDuration-age)/650,0,1)};
   }
 
   function tick(now) {
