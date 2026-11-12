@@ -98,11 +98,20 @@ body.component-viewing .component-statement{opacity:var(--statement-opacity,1)}
  .component-sketch{display:none}
 }
 
-.theatre-more>summary{display:inline-block;cursor:pointer;border:1px solid var(--ink);padding:9px 16px;list-style:none}
+.theatre-more>summary{display:block;position:relative;cursor:pointer;list-style:none;text-align:center}
 .theatre-more>summary::-webkit-details-marker{display:none}
-.theatre-more>summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.theatre-more[open]>summary{margin-bottom:24px}
-.theatre-more:not([open]) .theatre-hide,.theatre-more[open] .theatre-show{display:none}
+.theatre-more>summary:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+.theatre-preview{display:block;width:100%;height:clamp(116px,18vw,230px);object-fit:cover;object-position:center 42%;opacity:.78;mask-image:linear-gradient(transparent,#000 16%,#000 40%,transparent 100%);transition:opacity .35s ease}
+.theatre-more>summary:hover .theatre-preview,.theatre-more>summary:focus-visible .theatre-preview{opacity:1}
+.theatre-show,.theatre-hide{display:inline-flex;align-items:center;gap:.6em;padding:12px 0;font-size:.875rem}
+.theatre-show{position:absolute;bottom:0;left:50%;transform:translateX(-50%);white-space:nowrap}
+.theatre-show>span{transition:transform .25s ease}
+.theatre-more>summary:hover .theatre-show>span{transform:translateY(3px)}
+.theatre-more[open]>summary{margin-bottom:20px}
+.theatre-more:not([open]) .theatre-hide,.theatre-more[open] :is(.theatre-show,.theatre-preview){display:none}
+.theatre-more[open] .theatre-reveal{animation:theatre-fade-in .5s ease both}
+@keyframes theatre-fade-in{from{opacity:.25;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.theatre-preview,.theatre-show>span{transition:none}.theatre-more[open] .theatre-reveal{animation:none}}
 </style></head><body>
 <header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a></nav></header>
 <main><div class="hero"><div><div class="eyebrow">A visual journal / Photography · Film · People</div><h1>Collected<br><em>encounters.</em></h1></div><div><p class="intro" id="intro"></p><p class="eyebrow">Look closer. Stay a little longer.</p></div></div>
@@ -473,7 +482,8 @@ function renderTheatre(theatre) {
  const figures=theatre.images.map(photo=>`<figure style="margin:0 0 36px"><h3>${esc(photo.title)}</h3><img class="series-single" loading="lazy" src="${esc(safeImage(photo.image))}" alt="${esc(photo.title)}" data-series-image></figure>`);
  const [first='',...remaining]=figures;
  const statement=`<h3>${esc(theatre.title)}</h3><div class="series-copy">${theatre.text.split(/\n\n/).map(text=>`<p>${esc(text)}</p>`).join('')}</div>`;
- const rest=remaining.length?`<details class="theatre-more"><summary><span class="theatre-show">Show more</span><span class="theatre-hide">Show less</span></summary>${remaining.join('')}${statement}</details>`:statement;
+ const nextPhoto=theatre.images[1];
+ const rest=nextPhoto?`<details class="theatre-more"><summary><img class="theatre-preview" loading="lazy" src="${esc(safeImage(nextPhoto.image))}" alt=""><span class="theatre-show">Show more <span aria-hidden="true">↓</span></span><span class="theatre-hide">Show less <span aria-hidden="true">↑</span></span></summary><div class="theatre-reveal">${remaining.join('')}${statement}</div></details>`:statement;
  return `<div class="series">${first}${rest}</div>`;
 }
 function renderHorizon(s){
