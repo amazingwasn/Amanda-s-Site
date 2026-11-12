@@ -1,7 +1,7 @@
 import { Body, ConvexPolyhedron, Plane, SAPBroadphase, Vec3, World } from './vendor/cannon-es-0.20.0.js';
 
-const holdLimit = 3000;
-const remapInterval = 2000;
+const holdLimit = 5000;
+const remapInterval = 3000;
 const blockHeight = .84;
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const directions = [
@@ -24,9 +24,9 @@ const artwork = '<dialog class="babel-game" aria-labelledby="babel-game-title">'
   '<div class="babel-scene-status"><strong data-babel-status>Hold to lift</strong><span data-babel-time></span></div>' +
   '<div class="babel-hold-meter" aria-hidden="true"><i></i></div></div>' +
   '<div class="babel-panel"><dl class="babel-scores"><div><dt>Height</dt><dd data-babel-height>0.0</dd></div><div><dt>Best</dt><dd data-babel-best>0.0</dd></div></dl>' +
-  '<div class="babel-controls"><div class="babel-control-heading"><span>Direction keys</span><span data-babel-remap>2.0 s</span></div>' +
+  '<div class="babel-controls"><div class="babel-control-heading"><span>Direction keys</span><span data-babel-remap>3.0 s</span></div>' +
   '<div class="babel-keys">' + directions.map((direction,index) => '<button type="button" data-babel-direction="' + index + '"><span class="babel-key-direction">' + direction.arrow + ' ' + direction.name + '</span><kbd></kbd></button>').join('') + '</div></div>' +
-  '<p class="babel-instructions">Hold down a trackpad click or touch the sand. Move with the letters shown and release to drop. The keys change after a move or two seconds. You have three seconds before the block falls.</p>' +
+  '<p class="babel-instructions">Hold down a trackpad click or touch the sand. Move with the letters shown and release to drop. The keys change after a move or three seconds. You have five seconds before the block falls.</p>' +
   '<button type="button" class="babel-reset">Start again</button></div></div></dialog>';
 
 function makeWorld() {
