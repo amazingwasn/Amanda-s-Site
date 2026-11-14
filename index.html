@@ -154,8 +154,10 @@ dialog.babel-game{width:min(1110px,calc(100vw - 28px));max-width:none;max-height
  .babel-keys{grid-template-columns:repeat(4,minmax(0,1fr))}
  .babel-launch>span{right:6px;bottom:6px;padding:5px 7px;font-size:10px}
 }
+
+nav .external-link{display:inline-flex;align-items:center;gap:.25em;white-space:nowrap}nav .external-icon{font-size:.85em;line-height:1}@media(max-width:750px){header nav{flex-wrap:wrap;justify-content:flex-end;column-gap:12px;row-gap:6px;min-width:0}}
 </style></head><body>
-<header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a></nav></header>
+<header><a href="#"><strong>HAN WANG</strong></a><nav><a href="#photography">Photography</a><a href="#film">Film</a><a href="#strangers">Strangers</a><a class="external-link" href="https://amazingwasn.github.io/mountainmap/" target="_blank" rel="noopener noreferrer" aria-label="Mountain Map (opens in a new tab)">Mountain Map <span class="external-icon" aria-hidden="true">↗</span></a></nav></header>
 <main><div class="hero"><div><div class="eyebrow">A visual journal / Photography · Film · People</div><h1>Collected<br><em>encounters.</em></h1></div><div><p class="intro" id="intro"></p><p class="eyebrow">Look closer. Stay a little longer.</p></div></div>
 <div class="hero-photo" id="heroImage"></div><div class="caption"><span id="heroCaption"></span><span>01 — An ongoing collection</span></div>
 <section id="photography"><div class="section-head"><div><span class="eyebrow">01 / Still images</span><h2>Photography</h2></div></div><div class="tabs" id="tabs"><button class="active" data-category="all">All photographs</button><button data-category="theatre">Theatre & event</button><button data-category="documentary">Documentary</button><button data-category="everyday">Intuition</button></div><div id="intuition-series"></div><div id="documentary-series"></div><div id="documentary-series-after"></div><div class="gallery" id="gallery"></div><div id="theatre-series"></div></section>
